@@ -8,6 +8,7 @@ const configViewEngine = require("./config/configViewEngine");
 
 //route
 const productRoutes = require("./routes/productRoute");
+const categoryRoutes = require("./routes/categoryRoute");
 
 const app = express();
 
@@ -17,6 +18,8 @@ app.use(cors());
 
 //route
 app.use("/products", productRoutes);
+app.use("/categories", categoryRoutes);
+
 //View Engine
 configViewEngine(app);
 
