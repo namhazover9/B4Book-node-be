@@ -9,6 +9,6 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-const Category = mongoose.model("Category", userSchema);
+const Role = mongoose.model("Role", userSchema);
 
-module.exports = Category;
+module.exports = Role;
