@@ -9,9 +9,9 @@ const port = process.env.PORT || 8000;
 const productRoutes = require("./routes/productRoute");
 const categoryRoutes = require("./routes/categoryRoute");
 const inventoryRoutes = require("./routes/inventoryRoute");
-
-const app = express();
 const userRoute = require("./routes/userRoute");
+const app = express();
+
 const session = require("express-session");
 const path = require("path");
 
@@ -35,9 +35,6 @@ app.use("/products", productRoutes);
 app.use("/categories", categoryRoutes);
 app.use("/inventories", inventoryRoutes);
 app.use("/", userRoute);
-
-
-
 
 app.listen(port, () => {
   console.log(`server is working on port: ${port}`);
