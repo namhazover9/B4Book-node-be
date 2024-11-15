@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema(
     shopAddress: { type: String, required: true },
     phoneNumber: { type: String, required: true },
     isActive: { type: Boolean, required: true },
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   {
     timestamps: true,
