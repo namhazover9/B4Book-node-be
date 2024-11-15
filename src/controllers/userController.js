@@ -103,6 +103,26 @@ const failureFacebookLogin = (req, res) => {
   res.send("Error");
 };
 
+const renderHomePage = (req, res) => {
+  try {
+    const { verifyToken } = req.body;
+    const verify = jwt.verify(verifyToken, process.env.Activation_sec);
+    if (!verify) {
+      return res.status(404).send({ message: "Token not found" });
+    }
+    const token = jwt.sign({ _id: verify.user._id }, process.env.Jwt_sec, {
+      expiresIn: "5d",
+    });
+    res.json({
+      success: true,
+      message: "Login success",
+      token,
+    });
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+};
+
 const showAllUser = async (req, res) => {
   try {
     const user = await User.find().populate("role");
@@ -112,6 +132,13 @@ const showAllUser = async (req, res) => {
   }
 };
 
+const showProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    res.json(user);
+  } catch (error) {}
+};
+
 module.exports = {
   loadAuth,
   GoogleLogin,
@@ -119,4 +146,6 @@ module.exports = {
   FacebookLogin,
   failureFacebookLogin,
   showAllUser,
+  renderHomePage,
+  showProfile,
 };

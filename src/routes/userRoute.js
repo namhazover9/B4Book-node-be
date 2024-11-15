@@ -7,6 +7,7 @@ router.use(passport.initialize());
 router.use(passport.session());
 
 const userController = require("../controllers/userController");
+const { isAuth } = require("../middlewares/auth");
 
 router.get("/", userController.loadAuth);
 
@@ -39,8 +40,9 @@ router.get(
     failureRedirect: "/failed",
   })
 );
-
+router.get("/Userprofile", isAuth, userController.showProfile);
 router.get("/successLoginFacebook", userController.FacebookLogin);
+router.get("/homepage", userController.renderHomePage);
 
 router.get("/failed", (req, res) => {
   res.send("U are not valid user");
