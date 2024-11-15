@@ -151,14 +151,22 @@ exports.deleteProduct = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-exports.getProductByName = async (req, res) => {
-  console.log("111");
+
+exports.searchProductByTitle = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate("category");
-    if (product) {
-      res.json(product);
+    const titleQuery = req.query.title; // Chỉ lấy từ query string
+    if (!titleQuery) {
+      return res.status(400).send({ message: "Title query is required" });
+    }
+
+    const products = await Product.find({
+      title: { $regex: new RegExp("^" + titleQuery, "i") },
+    }).populate("category");
+
+    if (products.length > 0) {
+      res.json(products);
     } else {
-      res.status(404).send({ message: "Product not found" });
+      res.status(404).send({ message: "No products found" });
     }
   } catch (error) {
     res.status(500).send({ message: error.message });
