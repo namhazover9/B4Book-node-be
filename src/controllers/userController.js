@@ -103,10 +103,20 @@ const failureFacebookLogin = (req, res) => {
   res.send("Error");
 };
 
+const showAllUser = async (req, res) => {
+  try {
+    const user = await User.find().populate("role");
+    res.json(user);
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+};
+
 module.exports = {
   loadAuth,
   GoogleLogin,
   failureGoogleLogin,
   FacebookLogin,
   failureFacebookLogin,
+  showAllUser,
 };
