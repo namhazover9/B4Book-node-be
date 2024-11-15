@@ -3,7 +3,7 @@ const Category = require("../models/category");
 
 exports.getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find().populate("category"); 
+    const products = await Product.find().populate("category");
     res.json(products);
   } catch (error) {
     res.status(500).send({ message: error.message });
@@ -23,56 +23,56 @@ exports.getProductById = async (req, res) => {
   }
 };
 
-exports.getAllProductsByTitle = async (req, res) => {
-  try {
-    const titleQuery = req.query.title;
-    if (!titleQuery) {
-      return res.status(400).send({ message: "Title query is required" });
-    }
-
-    // Tìm kiếm các sản phẩm có title bắt đầu bằng titleQuery, không phân biệt hoa thường
-    const products = await Product.find({ 
-      title: { $regex: new RegExp("^" + titleQuery, "i") } 
-    }).populate("category");
-
-    if (products.length > 0) {
-      res.json(products);
-    } else {
-      res.status(404).send({ message: "No products found" });
-    }
-  } catch (error) {
-    res.status(500).send({ message: error.message });
-  }
-};
-
 exports.getProductsByCategoryName = async (req, res) => {
   try {
     // Tìm danh mục dựa trên tên (category name)
     const category = await Category.findOne({ name: req.params.name });
-    
+
     if (!category) {
       return res.status(404).send("Category not found");
     }
 
     // Tìm các sản phẩm thuộc danh mục đã tìm được
-    const products = await Product.find({ category: category._id});
+    const products = await Product.find({ category: category._id });
     res.json(products);
   } catch (err) {
     res.status(500).send("Server Error");
   }
 };
 
-
 exports.createProduct = async (req, res) => {
   try {
-    const {title, category, price, author, publisher,
-         description, isbn, public_date, language, stock,
-         inventory, isApproved, isDeleted} = req.body;
+    const {
+      title,
+      category,
+      price,
+      author,
+      publisher,
+      description,
+      ISBN,
+      public_date,
+      language,
+      stock,
+      inventory,
+      isApproved,
+      isDeleted,
+    } = req.body;
 
-    const product = new Product({title, category, price,
-        author, publisher, description,
-        isbn, public_date, language, stock,
-        inventory, isApproved, isDeleted});
+    const product = new Product({
+      title,
+      category,
+      price,
+      author,
+      publisher,
+      description,
+      ISBN,
+      public_date,
+      language,
+      stock,
+      inventory,
+      isApproved,
+      isDeleted,
+    });
 
     await product.save();
     res.status(201).json(product);
@@ -83,17 +83,40 @@ exports.createProduct = async (req, res) => {
 
 exports.updateProduct = async (req, res) => {
   try {
-    const {title, category, price, author, publisher,
-         description, isbn, public_date, language, stock,
-         inventory, isApproved, isDeleted} = req.body;
+    const {
+      title,
+      category,
+      price,
+      author,
+      publisher,
+      description,
+      ISBN,
+      public_date,
+      language,
+      stock,
+      inventory,
+      isApproved,
+      isDeleted,
+    } = req.body;
 
     const product = await Product.findByIdAndUpdate(
       req.params.id,
-      { title, category, price,
-        author, publisher, description,
-        isbn, public_date, language, stock,
-        inventory, isApproved, isDeleted},
-      {new: true}
+      {
+        title,
+        category,
+        price,
+        author,
+        publisher,
+        description,
+        ISBN,
+        public_date,
+        language,
+        stock,
+        inventory,
+        isApproved,
+        isDeleted,
+      },
+      { new: true }
     );
 
     if (product) {
@@ -107,24 +130,37 @@ exports.updateProduct = async (req, res) => {
 };
 
 exports.deleteProduct = async (req, res) => {
-    const id = req.body.id;
-    if (!id) {
-        return res.status(400).json({ message: "Product ID is required" });
+  const id = req.body.id;
+  if (!id) {
+    return res.status(400).json({ message: "Product ID is required" });
+  }
+
+  try {
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
     }
 
-    try {
-        const product = await Product.findById(id);
-        if (!product) {
-            return res.status(404).json({ message: "Product not found" });
-        }
+    product.isDeleted = true;
+    await product.save();
 
-        product.isDeleted = true;
-        await product.save();
-
-        req.flash("success", "Product deleted successfully");
-        return res.redirect("/products"); // Đổi URL đến trang phù hợp
-    } catch (error) {
-        console.error("Error during soft delete:", error);
-        return res.status(500).json({ message: "Internal server error" });
+    req.flash("success", "Product deleted successfully");
+    return res.redirect("/products"); // Đổi URL đến trang phù hợp
+  } catch (error) {
+    console.error("Error during soft delete:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+exports.getProductByName = async (req, res) => {
+  console.log("111");
+  try {
+    const product = await Product.findById(req.params.id).populate("category");
+    if (product) {
+      res.json(product);
+    } else {
+      res.status(404).send({ message: "Product not found" });
     }
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
 };
