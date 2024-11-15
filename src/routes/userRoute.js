@@ -1,0 +1,56 @@
+const express = require("express");
+const router = express();
+const passport = require("passport");
+require("../passport");
+
+router.use(passport.initialize());
+router.use(passport.session());
+
+const userController = require("../controllers/userController");
+
+router.get("/", userController.loadAuth);
+
+// Auth
+router.get(
+  "/auth/google",
+  passport.authenticate("google", { scope: ["email", "profile"] })
+);
+
+// Auth Callback
+router.get(
+  "/auth/google/callback",
+  passport.authenticate("google", {
+    successRedirect: "/success",
+    failureRedirect: "/failure",
+  })
+);
+
+// facebook root
+router.get(
+  "/auth/facebook",
+  passport.authenticate("facebook", { scope: ["email", "public_profile"] })
+);
+
+// facebook callback
+router.get(
+  "/facebook/callback",
+  passport.authenticate("facebook", {
+    successRedirect: "/successLoginFacebook",
+    failureRedirect: "/failed",
+  })
+);
+
+
+
+router.get("/successLoginFacebook", userController.FacebookLogin);
+
+router.get("/failed", (req, res) => {
+  res.send("U are not valid user");
+});
+// Success
+router.get("/success", userController.GoogleLogin);
+
+// failure
+router.get("/failure", userController.failureGoogleLogin);
+
+module.exports = router;

@@ -2,12 +2,14 @@ const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
-    email: { type: String, required: true, unique: true },
-    userName: { type: String, required: true, unique: true },
-    address: { type: String, required: true },
-    phoneNumber: { type: String, required: true },
+    email: { type: String },
+    userName: { type: String, required: true },
+    address: { type: String },
+    phoneNumber: { type: String },
     lastLogin: { type: Date, required: true },
     isActive: { type: Boolean, required: true },
+    avartar: { type: String },
+    authProvider: { type: String, required: true },
     role: [
       { type: mongoose.Schema.Types.ObjectId, ref: "Role", required: true },
     ],
