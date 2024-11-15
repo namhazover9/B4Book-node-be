@@ -22,6 +22,28 @@ exports.getCategoryById = async (req, res) => {
   }
 };
 
+exports.getAllCategoriessByName = async (req, res) => {
+  try {
+    const titleQuery = req.query.name;
+    if (!titleQuery) {
+      return res.status(400).send({ message: "Name query is required" });
+    }
+
+    // Tìm kiếm các sản phẩm có title bắt đầu bằng titleQuery, không phân biệt hoa thường
+    const categories = await Category.find({ 
+      name: { $regex: new RegExp("^" + titleQuery, "i") } 
+    });
+
+    if (categories.length > 0) {
+      res.json(categories);
+    } else {
+      res.status(404).send({ message: "No categories found" });
+    }
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+};
+
 exports.createCategory = async (req, res) => {
   try {
     const { name } = req.body;
