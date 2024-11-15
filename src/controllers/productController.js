@@ -23,22 +23,44 @@ exports.getProductById = async (req, res) => {
   }
 };
 
-exports.getProductsByCategoryName = async (req, res) => {
-  try {
-    // Tìm danh mục dựa trên tên (category name)
-    const category = await Category.findOne({ name: req.params.name });
+// exports.searchProductByTitle = async (req, res) => {
+//   try {
+//     const titleQuery = req.query.title;
+//     if (!titleQuery) {
+//       return res.status(400).send({ message: "Title query is required" });
+//     }
 
-    if (!category) {
-      return res.status(404).send("Category not found");
-    }
+//     const products = await Product.find({ 
+//       title: { $regex: new RegExp("^" + titleQuery, "i") } 
+//     }).populate("category");
 
-    // Tìm các sản phẩm thuộc danh mục đã tìm được
-    const products = await Product.find({ category: category._id });
-    res.json(products);
-  } catch (err) {
-    res.status(500).send("Server Error");
-  }
-};
+//     if (products.length > 0) {
+//       res.json(products);
+//     } else {
+//       res.status(404).send({ message: "No products found" });
+//     }
+//   } catch (error) {
+//     res.status(500).send({ message: error.message });
+//   }
+// };
+
+
+
+// exports.getProductsByCategoryName = async (req, res) => {
+//   try {
+//     // Tìm danh mục dựa trên tên (category name)
+//     const category = await Category.findOne({ name: req.params.name });
+
+//     if (!category) {
+//       return res.status(404).send("Category not found");
+//     }
+
+//     const products = await Product.find({ category: category._id });
+//     res.json(products);
+//   } catch (err) {
+//     res.status(500).send("Server Error");
+//   }
+// };
 
 exports.createProduct = async (req, res) => {
   try {
@@ -152,23 +174,4 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
-exports.searchProductByTitle = async (req, res) => {
-  try {
-    const titleQuery = req.query.title; // Chỉ lấy từ query string
-    if (!titleQuery) {
-      return res.status(400).send({ message: "Title query is required" });
-    }
 
-    const products = await Product.find({
-      title: { $regex: new RegExp("^" + titleQuery, "i") },
-    }).populate("category");
-
-    if (products.length > 0) {
-      res.json(products);
-    } else {
-      res.status(404).send({ message: "No products found" });
-    }
-  } catch (error) {
-    res.status(500).send({ message: error.message });
-  }
-};
