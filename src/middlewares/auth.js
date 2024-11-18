@@ -19,9 +19,10 @@ const isAdmin = async (req, res, next) => {
     const decode = jwt.verify(token, process.env.Jwt_sec);
     const roleAdmin = await Role.findOne({ name: "Admin" });
     req.user = await User.findById(decode._id);
-    if (req.user.role !== roleAdmin) {
+    console.log(req.user.role.toString() !== roleAdmin._id);
+    if (req.user.role.toString() !== roleAdmin._id.toString()) {
       return res.status(404).json({
-        message: "U are not Admin",
+        message: "U are not Admin ",
         status: "ERROR",
       });
     }
@@ -44,7 +45,8 @@ const isShop = async (req, res, next) => {
     const decode = jwt.verify(token, process.env.Jwt_sec);
     const roleShop = await Role.findOne({ name: "Shop" });
     req.user = await User.findById(decode._id);
-    if (req.user.role !== roleShop) {
+    console.log(req.user.role !== roleShop._id);
+    if (req.user.role.toString() !== roleShop._id.toString()) {
       return res.status(404).json({
         message: "U are not Seller",
         status: "ERROR",

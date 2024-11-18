@@ -69,7 +69,7 @@ const FacebookLogin = async (req, res) => {
       authProvider: "facebook",
     });
     const customerRole = await Role.findOne({
-      name: "Customer",
+      name: "Admin",
     });
     if (!user) {
       user = await User.create({
@@ -171,6 +171,21 @@ const registerShop = async (req, res) => {
     }
 };
 
+// const createRole = async (req, res) => {
+//   try {
+//     const { name } = req.body; // Lấy thuộc tính "name" từ body
+//     if (!name) {
+//       return res.status(400).json({ message: "Name is required" });
+//     }
+
+//     const result = await Role.create({ name });
+//     res.status(201).json(result); // Trả về JSON kèm mã 201 (Created)
+//   } catch (error) {
+//     console.error(error); // Ghi log lỗi để debug
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// };
+
 module.exports = {
   loadAuth,
   GoogleLogin,
@@ -181,4 +196,5 @@ module.exports = {
   renderHomePage,
   showProfile,
   registerShop,
+
 };

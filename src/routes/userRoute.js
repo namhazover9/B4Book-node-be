@@ -10,7 +10,7 @@ const userController = require("../controllers/userController");
 const { isAuth } = require("../middlewares/auth");
 
 router.get("/", userController.loadAuth);
-
+// router.post("/createRole", userController.createRole);
 // Auth
 router.get(
   "/auth/google",
