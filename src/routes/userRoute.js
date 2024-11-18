@@ -48,7 +48,7 @@ router.get("/failed", (req, res) => {
   res.send("U are not valid user");
 });
 
-router.get("/showAllUser", userController.showAllUser);
+
 // Success
 router.get("/success", userController.GoogleLogin);
 

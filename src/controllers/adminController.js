@@ -1,11 +1,11 @@
-const Inventory = require("../models/inventory");
 const Shop = require("../models/shop");
+const User = require("../models/user");
 
+// function approve register form become a seller from user
 const approvedShop = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Cập nhật `isApproved` và `isActive` thành true
         const response = await Shop.findByIdAndUpdate(
             id, 
             { 
@@ -17,14 +17,14 @@ const approvedShop = async (req, res) => {
         if (!response) {
             return res.status(404).json({ message: "Shop not found" });
         }
-        
+
         res.status(200).json(response);
     } catch (error) {
         res.status(500).send({ message: error.message });
     }
 };
 
-
+// function show all register form
 const showAllRegisterForm = async (req, res) => {
     try {
         const respone = await Shop.find({ isApproved: false });
@@ -33,5 +33,14 @@ const showAllRegisterForm = async (req, res) => {
         res.status(500).send({ message: error.message });
     }
 }
+// Show all user for admin
+const showAllUser = async (req, res) => {
+    try {
+      const user = await User.find().populate("role");
+      res.json(user);
+    } catch (error) {
+      res.status(500).send({ message: error.message });
+    }
+  };
 
-module.exports = { approvedShop, showAllRegisterForm };
+module.exports = { approvedShop, showAllRegisterForm, showAllUser };

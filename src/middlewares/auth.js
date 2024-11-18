@@ -41,7 +41,6 @@ const isShop = async (req, res, next) => {
         status: "ERROR",
       });
     }
-
     const decode = jwt.verify(token, process.env.Jwt_sec);
     const roleShop = await Role.findOne({ name: "Shop" });
     req.user = await User.findById(decode._id);

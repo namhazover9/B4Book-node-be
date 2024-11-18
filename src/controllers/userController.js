@@ -126,14 +126,8 @@ const renderHomePage = (req, res) => {
   }
 };
 
-const showAllUser = async (req, res) => {
-  try {
-    const user = await User.find().populate("role");
-    res.json(user);
-  } catch (error) {
-    res.status(500).send({ message: error.message });
-  }
-};
+
+
 
 const showProfile = async (req, res) => {
   try {
@@ -143,7 +137,7 @@ const showProfile = async (req, res) => {
 };
 
 
-
+// function register from normal user become a seller
 const registerShop = async (req, res) => {
     try {
         const { shopName, shopEmail, shopAddress, phoneNumber, avartar } = req.body;
@@ -192,7 +186,6 @@ module.exports = {
   failureGoogleLogin,
   FacebookLogin,
   failureFacebookLogin,
-  showAllUser,
   renderHomePage,
   showProfile,
   registerShop,
