@@ -4,7 +4,7 @@ const connectDb = require("./database/database");
 dotenv.config();
 const cors = require("cors");
 const port = process.env.PORT || 8000;
-
+const bodyParser = require("body-parser");
 //route
 const productRoutes = require("./routes/productRoute");
 const categoryRoutes = require("./routes/categoryRoute");
@@ -14,7 +14,7 @@ const app = express();
 
 const session = require("express-session");
 const path = require("path");
-
+app.use(bodyParser.json());
 app.use(
   session({
     resave: false,
