@@ -43,7 +43,7 @@ router.get(
 router.get("/Userprofile", isAuth, userController.showProfile);
 router.get("/successLoginFacebook", userController.FacebookLogin);
 router.get("/homepage", userController.renderHomePage);
-
+router.post("/registerShop",isAuth, userController.registerShop);
 router.get("/failed", (req, res) => {
   res.send("U are not valid user");
 });
