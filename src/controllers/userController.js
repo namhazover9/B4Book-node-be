@@ -28,6 +28,7 @@ const GoogleLogin = async (req, res) => {
         userName: `${req.user.name.givenName} ${req.user.name.familyName}`,
         lastLogin: Date.now(),
         isActive: true,
+        avartar: req.user.photos[0].value,
         authProvider: "google",
         role: customerRole ? [customerRole._id] : [],
       });
@@ -75,6 +76,7 @@ const FacebookLogin = async (req, res) => {
         userName: req.user.displayName,
         lastLogin: Date.now(),
         isActive: true,
+        avartar: req.user.photos[0].value,
         role: customerRole ? [customerRole._id] : [],
         authProvider: "facebook",
       });
