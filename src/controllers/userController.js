@@ -110,17 +110,25 @@ const failureFacebookLogin = (req, res) => {
 const renderHomePage = (req, res) => {
   try {
     const { verifyToken } = req.body;
-    const verify = jwt.verify(verifyToken, process.env.Activation_sec);
-    if (!verify) {
-      return res.status(404).send({ message: "Token not found" });
+    if (verifyToken) {
+
+      const verify = jwt.verify(verifyToken, process.env.Activation_sec);
+      if (!verify) {
+        return res.status(404).send({ message: "Token not valid" });
+      }
+      const token = jwt.sign({ _id: verify.user._id }, process.env.Jwt_sec, {
+        expiresIn: "5d",
+      });
+
+      return res.json({
+        success: true,
+        message: "Login success",
+        token,
+      });
     }
-    const token = jwt.sign({ _id: verify.user._id }, process.env.Jwt_sec, {
-      expiresIn: "5d",
-    });
-    res.json({
+    res.status(200).send({
       success: true,
-      message: "Login success",
-      token,
+      message: "Welcome to the homepage!",
     });
   } catch (error) {
     res.status(500).send({ message: error.message });
