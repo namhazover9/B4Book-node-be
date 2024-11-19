@@ -13,16 +13,10 @@ const userSchema = new mongoose.Schema(
     stock: { type: Number, required: true },
     isApproved: { type: Boolean, required: true },
     isDeleted: { type: Boolean, required: true },
-    inventory: {
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: "Invetory",
+    category: [{
+      type: String,
       required: true,
-    },
-    category: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
-      required: true,
-    },
+    }],
   },
   {
     timestamps: true,

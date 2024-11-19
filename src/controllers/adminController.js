@@ -1,6 +1,6 @@
+const Role = require("../models/role");
 const Shop = require("../models/shop");
 const User = require("../models/user");
-
 // function approve register form become a seller from user
 const approvedShop = async (req, res) => {
     try {
@@ -14,15 +14,32 @@ const approvedShop = async (req, res) => {
             }, 
             { new: true } 
         );
+        console.log("res",response);
         if (!response) {
             return res.status(404).json({ message: "Shop not found" });
         }
 
-        res.status(200).json(response);
+        const roleId = await Role.findOne({ name: "Shop" });
+        if (!roleId) {
+            return res.status(404).json({ message: "Role not found" });
+        }
+        console.log("roleid",roleId)
+        const user = await User.findByIdAndUpdate(
+            response.user, 
+            { $addToSet: { role: roleId._id } }, 
+            { new: true }
+        );
+        console.log(user);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({ shop: response, user });
     } catch (error) {
         res.status(500).send({ message: error.message });
     }
 };
+
 
 // function show all register form
 const showAllRegisterForm = async (req, res) => {
@@ -36,11 +53,14 @@ const showAllRegisterForm = async (req, res) => {
 // Show all user for admin
 const showAllUser = async (req, res) => {
     try {
-      const user = await User.find().populate("role");
-      res.json(user);
+        const users = await User.find().populate({
+            path: "role", 
+            select: "name",
+        });
+        res.status(200).json(users);
     } catch (error) {
-      res.status(500).send({ message: error.message });
+        res.status(500).send({ message: error.message });
     }
-  };
+};
 
 module.exports = { approvedShop, showAllRegisterForm, showAllUser };
