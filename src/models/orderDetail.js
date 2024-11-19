@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema(
+const orderDetailSchema = new mongoose.Schema(
   {
     orderHeader: {
       type: mongoose.Schema.Types.ObjectId,
@@ -26,6 +26,6 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-const OrderDetail = mongoose.model("OrderDetail", userSchema);
+const OrderDetail = mongoose.model("OrderDetail", orderDetailSchema);
 
 module.exports = OrderDetail;
