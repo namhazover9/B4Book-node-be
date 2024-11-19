@@ -38,7 +38,7 @@ app.use("/products", productRoutes);
 app.use("/", userRoute);
 app.use("/admin", adminRoute);
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0',() => {
   console.log(`server is working on port: ${port}`);
   connectDb();
 });
