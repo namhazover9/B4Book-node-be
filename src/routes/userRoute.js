@@ -7,9 +7,10 @@ router.use(passport.initialize());
 router.use(passport.session());
 
 const userController = require("../controllers/userController");
+const { isAuth } = require("../middlewares/auth");
 
 router.get("/", userController.loadAuth);
-
+// router.post("/createRole", userController.createRole);
 // Auth
 router.get(
   "/auth/google",
@@ -39,14 +40,15 @@ router.get(
     failureRedirect: "/failed",
   })
 );
-
-
-
+router.get("/Userprofile", isAuth, userController.showProfile);
 router.get("/successLoginFacebook", userController.FacebookLogin);
-
+router.get("/homepage", userController.renderHomePage);
+router.post("/registerShop",isAuth, userController.registerShop);
 router.get("/failed", (req, res) => {
   res.send("U are not valid user");
 });
+
+
 // Success
 router.get("/success", userController.GoogleLogin);
 

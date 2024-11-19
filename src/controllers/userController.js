@@ -1,6 +1,7 @@
 const path = require("path");
 const User = require("../models/user");
 const Role = require("../models/role");
+const Shop = require("../models/shop");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 dotenv.config();
@@ -28,6 +29,7 @@ const GoogleLogin = async (req, res) => {
         userName: `${req.user.name.givenName} ${req.user.name.familyName}`,
         lastLogin: Date.now(),
         isActive: true,
+        avartar: req.user.photos[0].value,
         authProvider: "google",
         role: customerRole ? [customerRole._id] : [],
       });
@@ -67,7 +69,7 @@ const FacebookLogin = async (req, res) => {
       authProvider: "facebook",
     });
     const customerRole = await Role.findOne({
-      name: "Customer",
+      name: "Admin",
     });
     if (!user) {
       user = await User.create({
@@ -75,6 +77,7 @@ const FacebookLogin = async (req, res) => {
         userName: req.user.displayName,
         lastLogin: Date.now(),
         isActive: true,
+        avartar: req.user.photos[0].value,
         role: customerRole ? [customerRole._id] : [],
         authProvider: "facebook",
       });
@@ -103,10 +106,88 @@ const failureFacebookLogin = (req, res) => {
   res.send("Error");
 };
 
+const renderHomePage = (req, res) => {
+  try {
+    const { verifyToken } = req.body;
+    const verify = jwt.verify(verifyToken, process.env.Activation_sec);
+    if (!verify) {
+      return res.status(404).send({ message: "Token not found" });
+    }
+    const token = jwt.sign({ _id: verify.user._id }, process.env.Jwt_sec, {
+      expiresIn: "5d",
+    });
+    res.json({
+      success: true,
+      message: "Login success",
+      token,
+    });
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+};
+
+
+
+
+const showProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    res.json(user);
+  } catch (error) {}
+};
+
+
+// function register from normal user become a seller
+const registerShop = async (req, res) => {
+    try {
+        const { shopName, shopEmail, shopAddress, phoneNumber, avartar } = req.body;
+        const reg = /^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)*$/;
+        const isCheckEmail = reg.test(shopEmail);
+        if (!shopEmail || !shopName || !shopAddress || !phoneNumber || !avartar ) {
+            return res.status(400).send({ message: "The input is required" });
+        }
+       else if(!isCheckEmail){
+            return res.status(400).send({ message: "Email is not valid" });
+        }
+        const respone = await Shop.create({
+            shopName: shopName, 
+            shopEmail: shopEmail,
+            shopAddress:shopAddress, 
+            phoneNumber:phoneNumber,
+            avartar:avartar,
+            isActive: false,
+            isApproved: false,
+            user: req.user._id
+        });
+        res.status(200).json(respone);
+    } catch (error) {
+        
+    }
+};
+
+// const createRole = async (req, res) => {
+//   try {
+//     const { name } = req.body; // Lấy thuộc tính "name" từ body
+//     if (!name) {
+//       return res.status(400).json({ message: "Name is required" });
+//     }
+
+//     const result = await Role.create({ name });
+//     res.status(201).json(result); // Trả về JSON kèm mã 201 (Created)
+//   } catch (error) {
+//     console.error(error); // Ghi log lỗi để debug
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// };
+
 module.exports = {
   loadAuth,
   GoogleLogin,
   failureGoogleLogin,
   FacebookLogin,
   failureFacebookLogin,
+  renderHomePage,
+  showProfile,
+  registerShop,
+
 };
