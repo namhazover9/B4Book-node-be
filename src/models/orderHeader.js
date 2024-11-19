@@ -1,10 +1,10 @@
 const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema(
+const orderHeaderSchema = new mongoose.Schema(
   {
-    user: {
+    orderHeader: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "orderHeader",
       required: true,
     },
     date: {
@@ -38,6 +38,6 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-const OrderHeader = mongoose.model("OrderHeader", userSchema);
+const OrderHeader = mongoose.model("OrderHeader", orderHeaderSchema);
 
 module.exports = OrderHeader;

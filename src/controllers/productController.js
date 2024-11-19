@@ -1,9 +1,9 @@
 const Product = require("../models/product");
-const Category = require("../models/category");
+// const Category = require("../models/category");
 
 exports.getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find().populate("category");
+    const products = await Product.find();
     res.json(products);
   } catch (error) {
     res.status(500).send({ message: error.message });
@@ -12,7 +12,7 @@ exports.getAllProducts = async (req, res) => {
 
 exports.getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate("category");
+    const product = await Product.findById(req.params.id);
     console.log(product);
     if (product) {
       res.json(product);
@@ -37,7 +37,6 @@ exports.createProduct = async (req, res) => {
       public_date,
       language,
       stock,
-      inventory,
       isApproved,
       isDeleted,
     } = req.body;
@@ -53,7 +52,6 @@ exports.createProduct = async (req, res) => {
       public_date,
       language,
       stock,
-      inventory,
       isApproved,
       isDeleted,
     });

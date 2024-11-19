@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema(
+const paymentSchema = new mongoose.Schema(
   {
     orderHeader: {
       type: mongoose.Schema.Types.ObjectId,
@@ -33,6 +33,6 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-const Payment = mongoose.model("Payment", userSchema);
+const Payment = mongoose.model("Payment", paymentSchema);
 
 module.exports = Payment;
