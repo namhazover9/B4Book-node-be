@@ -18,6 +18,7 @@ const productSchema = new mongoose.Schema(
     numberOfRating: { type: Number},
     rating: { type: Number},
     salesNumber: { type: Number},
+    shopId: { type: mongoose.Schema.Types.ObjectId, ref: "Shop" },
   },
   {
     timestamps: true,
