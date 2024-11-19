@@ -110,6 +110,7 @@ const failureFacebookLogin = (req, res) => {
 const renderHomePage = (req, res) => {
   try {
     const { verifyToken } = req.body;
+    
     if (verifyToken) {
 
       const verify = jwt.verify(verifyToken, process.env.Activation_sec);
