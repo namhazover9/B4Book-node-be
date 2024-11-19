@@ -65,7 +65,7 @@ exports.addProductToCart = async (req, res) => {
 exports.getLoggedUserCart = async (req, res) => {
     try {
         const cart = await Cart.findOne({ user: req.user._id });
-
+        console.log("cart", req.user._id);
         if (!cart) {
         return res.status(404).json({
             status: 'error',

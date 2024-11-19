@@ -6,11 +6,12 @@ const cors = require("cors");
 const port = process.env.PORT || 8000;
 const bodyParser = require("body-parser");
 //route
-const productRoutes = require("./routes/productRoute");
+const productRoute = require("./routes/productRoute");
 // const categoryRoutes = require("./routes/categoryRoute");
 // const inventoryRoutes = require("./routes/inventoryRoute");
 const userRoute = require("./routes/userRoute");
 const adminRoute = require("./routes/adminRoute")
+const shoppingCartRoute = require("./routes/shoppingCartRoute");
 const app = express();
 
 const session = require("express-session");
@@ -32,7 +33,8 @@ app.use(express.json());
 app.use(cors());
 
 //route
-app.use("/products", productRoutes);
+app.use("/products", productRoute);
+app.use("/cart", shoppingCartRoute);
 // app.use("/categories", categoryRoutes);
 // app.use("/inventories", inventoryRoutes);
 app.use("/", userRoute);

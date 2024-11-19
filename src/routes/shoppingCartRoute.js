@@ -1,13 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const ShoppingCartController = require('../controllers/shoppingCartController');
+const { isShop, isAuth } = require("../middlewares/auth");
+
 
 // router.use(authService.protect, authService.allowedTo('user'));
 router
   .route('/')
-  .post(ShoppingCartController.addProductToCart)
-  .get(ShoppingCartController.getLoggedUserCart)
-  .delete(ShoppingCartController.clearCart);
+  .post(isAuth, ShoppingCartController.addProductToCart)
+  .get(isAuth, ShoppingCartController.getLoggedUserCart)
+  .delete(isAuth, ShoppingCartController.clearCart);
 
 // router.put('/applyCoupon', applyCoupon);
 
