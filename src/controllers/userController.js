@@ -21,7 +21,7 @@ const GoogleLogin = async (req, res) => {
       authProvider: "google",
     });
     const customerRole = await Role.findOne({
-      name: "Shop",
+      name: "Customer",
     });
     if (!user) {
       user = await User.create({
