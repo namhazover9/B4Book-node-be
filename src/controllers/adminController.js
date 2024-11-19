@@ -40,7 +40,6 @@ const approvedShop = async (req, res) => {
     }
 };
 
-
 // function show all register form
 const showAllRegisterForm = async (req, res) => {
     try {

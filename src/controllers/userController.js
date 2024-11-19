@@ -106,6 +106,7 @@ const failureFacebookLogin = (req, res) => {
   res.send("Error");
 };
 
+// render home page and verify token
 const renderHomePage = (req, res) => {
   try {
     const { verifyToken } = req.body;
@@ -126,16 +127,13 @@ const renderHomePage = (req, res) => {
   }
 };
 
-
-
-
+// show profile for user
 const showProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     res.json(user);
   } catch (error) {}
 };
-
 
 // function register from normal user become a seller
 const registerShop = async (req, res) => {
@@ -189,5 +187,4 @@ module.exports = {
   renderHomePage,
   showProfile,
   registerShop,
-
 };
