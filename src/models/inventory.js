@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema(
+const inventorySchema = new mongoose.Schema(
   {
     shop: {
       type: mongoose.Schema.Types.ObjectId,
@@ -13,6 +13,6 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-const Inventory = mongoose.model("Inventory", userSchema);
+const Inventory = mongoose.model("Inventory", inventorySchema);
 
 module.exports = Inventory;

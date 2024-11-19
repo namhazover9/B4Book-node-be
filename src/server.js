@@ -7,7 +7,7 @@ const port = process.env.PORT || 8000;
 
 //route
 const productRoutes = require("./routes/productRoute");
-const categoryRoutes = require("./routes/categoryRoute");
+// const categoryRoutes = require("./routes/categoryRoute");
 const inventoryRoutes = require("./routes/inventoryRoute");
 
 const app = express();
@@ -32,7 +32,7 @@ app.use(cors());
 
 //route
 app.use("/products", productRoutes);
-app.use("/categories", categoryRoutes);
+// app.use("/categories", categoryRoutes);
 app.use("/inventories", inventoryRoutes);
 app.use("/", userRoute);
 

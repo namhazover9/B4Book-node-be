@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema(
+const shopSchema = new mongoose.Schema(
   {
     shopEmail: { type: String, required: true, unique: true },
     shopName: { type: String, required: true, unique: true },
@@ -14,6 +14,6 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-const Shop = mongoose.model("Shop", userSchema);
+const Shop = mongoose.model("Shop", shopSchema);
 
 module.exports = Shop;
