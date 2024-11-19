@@ -76,7 +76,6 @@ exports.updateProduct = async (req, res) => {
       public_date,
       language,
       stock,
-      inventory,
       isApproved,
       isDeleted,
     } = req.body;
@@ -94,7 +93,6 @@ exports.updateProduct = async (req, res) => {
         public_date,
         language,
         stock,
-        inventory,
         isApproved,
         isDeleted,
       },
