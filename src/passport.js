@@ -5,6 +5,8 @@ passport.serializeUser((user, done) => {
   done(null, user);
 });
 
+require('dotenv').config();
+
 passport.deserializeUser(function (user, done) {
   done(null, user);
 });
