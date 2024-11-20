@@ -50,6 +50,9 @@ const GoogleLogin = async (req, res) => {
   }
 };
 
+// add password for login by google
+
+
 // function login by facebook
 const FacebookLogin = async (req, res) => {
   if (!req.user) res.redirect("/failure");
@@ -97,6 +100,37 @@ const FacebookLogin = async (req, res) => {
     res.status(500).send("An error occurred during Facebook login.");
   }
 };
+
+const loginWithPassword = async(req,res) =>{
+  const {email, passWord,userName,address,phoneNumber} = req.body;
+  const customerRole = await Role.findOne({
+    name: "Customer",
+  })
+  try {
+    const user = await User.create({
+      email: email,
+      userName: userName,
+      address: address,
+      phoneNumber: phoneNumber,
+      lastLogin: Date.now(),
+      isActive: true,
+      role: customerRole ? [customerRole._id] : [],
+      authProvider: "google",
+      passWord: passWord
+    });
+    const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
+      expiresIn: "5m",
+    });
+    res.json({
+      success: true,
+      message: "Login success",
+      verifyToken,
+    });
+  }catch(error){
+    Console.log(error)
+  }
+  
+}
 
 const failureGoogleLogin = (req, res) => {
   res.send("Error");
@@ -196,4 +230,5 @@ module.exports = {
   renderHomePage,
   showProfile,
   registerShop,
+  loginWithPassword
 };
