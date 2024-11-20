@@ -36,7 +36,7 @@ passport.use(
     {
       clientID: process.env.CLIENT_ID_FB, // Your Credentials here.
       clientSecret: process.env.CLIENT_SECRET_FB, // Your Credentials here.
-      callbackURL: "https://b4book-node-be.onrender.com/facebook/callback",
+      callbackURL: "https://b4book-node-be.onrender.com/auth/google/callback",
       profileFields: ["id", "displayName", "photos", "email"],
       passReqToCallback: true,
     },
