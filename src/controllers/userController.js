@@ -102,22 +102,14 @@ const FacebookLogin = async (req, res) => {
 };
 
 const loginWithPassword = async(req,res) =>{
-  const {email, passWord,userName,address,phoneNumber} = req.body;
-  const customerRole = await Role.findOne({
-    name: "Customer",
-  })
+  const {email, passWord} = req.body;
   try {
-    const user = await User.create({
-      email: email,
-      userName: userName,
-      address: address,
-      phoneNumber: phoneNumber,
-      lastLogin: Date.now(),
-      isActive: true,
-      role: customerRole ? [customerRole._id] : [],
-      authProvider: "google",
-      passWord: passWord
+    const user = await User.findOne({
+     email,passWord
     });
+    if(!user){
+      return res.status(404).send({message:"User not found"});
+    }
     const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
       expiresIn: "5m",
     });
