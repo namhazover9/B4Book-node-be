@@ -14,6 +14,7 @@ const productSchema = new mongoose.Schema(
     isApproved: { type: Boolean, required: true },
     isDeleted: { type: Boolean, required: true },
     category: [{type: String, required: true}],
+    shopId: { type: mongoose.Schema.Types.ObjectId, ref: 'Shop', required: true },
 
   },
   {

@@ -39,6 +39,7 @@ exports.createProduct = async (req, res) => {
       stock,
       isApproved,
       isDeleted,
+      shopId,
     } = req.body;
 
     const product = new Product({
@@ -54,6 +55,7 @@ exports.createProduct = async (req, res) => {
       stock,
       isApproved,
       isDeleted,
+      shopId,
     });
 
     await product.save();

@@ -12,6 +12,8 @@ const productRoute = require("./routes/productRoute");
 const userRoute = require("./routes/userRoute");
 const adminRoute = require("./routes/adminRoute")
 const shoppingCartRoute = require("./routes/shoppingCartRoute");
+const orderRoute = require("./routes/orderRoute");
+
 const app = express();
 
 const session = require("express-session");
@@ -35,6 +37,7 @@ app.use(cors());
 //route
 app.use("/products", productRoute);
 app.use("/cart", shoppingCartRoute);
+app.use("/order", orderRoute);
 // app.use("/categories", categoryRoutes);
 // app.use("/inventories", inventoryRoutes);
 app.use("/", userRoute);
