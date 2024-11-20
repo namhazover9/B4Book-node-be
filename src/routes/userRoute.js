@@ -61,6 +61,7 @@ router.get("/successLoginFacebook", userController.FacebookLogin);
 router.get("/homepage", userController.renderHomePage);
 router.post("/registerShop",isAuth, userController.registerShop);
 router.post("/loginWithPassword", userController.loginWithPassword);
+router.put("/addPassword",isAuth, userController.addPassword);
 router.get("/failed", (req, res) => {
   res.send("U are not valid user");
 });

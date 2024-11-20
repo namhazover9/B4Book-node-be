@@ -32,19 +32,18 @@ const GoogleLogin = async (req, res) => {
         userName: `${req.user.name.givenName} ${req.user.name.familyName}`,
         lastLogin: Date.now(),
         isActive: true,
-        avatar: req.user.photos ? req.user.photos[0].value : '', // Kiểm tra nếu có ảnh đại diện
+        avatar: req.user.photos ? req.user.photos[0].value : '', 
         authProvider: "google",
         role: customerRole ? [customerRole._id] : [],
       });
       console.log("User created successfully:", user);
+      res.redirect("/addPassword");
     }
 
     // Tạo JWT token cho người dùng
     const verifyToken = jwt.sign({ userId: user._id }, process.env.Activation_sec, {
       expiresIn: "5m",
     });
-
-    // Trả về kết quả cho client
     return res.json({
       success: true,
       message: "Google login successful",
@@ -57,6 +56,20 @@ const GoogleLogin = async (req, res) => {
   }
 };
 
+const addPassword = async (req, res) => {
+  const { passWord } = req.body;
+  try {
+    const user = await User.findByIdAndUpdate(req.user._id,{
+      passWord:passWord},
+      { new: true });
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+    return res.status(200).send({ message: "Password updated successfully" });
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 // add password for login by google
 
@@ -231,5 +244,6 @@ module.exports = {
   renderHomePage,
   showProfile,
   registerShop,
-  loginWithPassword
+  loginWithPassword,
+  addPassword
 };
