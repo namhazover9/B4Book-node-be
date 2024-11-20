@@ -105,7 +105,8 @@ const loginWithPassword = async(req,res) =>{
   const {email, passWord} = req.body;
   try {
     const user = await User.findOne({
-     email,passWord
+     email:email,
+     passWord:passWord  
     });
     if(!user){
       return res.status(404).send({message:"User not found"});
