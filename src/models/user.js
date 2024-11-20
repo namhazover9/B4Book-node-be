@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema(
     isActive: { type: Boolean, required: true },
     avartar: { type: String },
     authProvider: { type: String, required: true },
+    passWord: { type: String},
     role: [
       { type: mongoose.Schema.Types.ObjectId, ref: "Role", required: true },
     ],
