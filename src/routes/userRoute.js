@@ -23,7 +23,6 @@ router.get("/auth/google/callback", passport.authenticate('google', { failureRed
       await userController.GoogleLogin(req, res);  // Chắc chắn rằng GoogleLogin được gọi sau khi xác thực thành công
     }
   } catch (error) {
-    console.error("Error during Google login:", error);
     res.redirect("/failed");
   }
 });
@@ -36,9 +35,7 @@ router.get("/logout", (req, res) => {
 });
 
 // facebook root
-router.get(
-  "/auth/facebook",
-  passport.authenticate("facebook", { scope: ["email", "public_profile"] })
+router.get("/auth/facebook",passport.authenticate("facebook", { scope: ["email", "public_profile"] })
 );
 
 // facebook callback
@@ -53,7 +50,6 @@ router.get(
         await userController.FacebookLogin(req, res);  // Chắc chắn rằng GoogleLogin được gọi sau khi xác thực thành công
       }
     } catch (error) {
-      console.error("Error during Facebook login:", error);
       res.redirect("/failed");
     }
   }
