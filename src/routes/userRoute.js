@@ -12,6 +12,7 @@ router.get("/", userController.loadAuth);
 // router.post("/createRole", userController.createRole);
 
 router.get("/auth/google", passport.authenticate("google", ["email", "profile"]));
+
 router.get("/auth/google/callback", passport.authenticate('google', { failureRedirect: '/failed' }), async (req, res) => {
   try {
     // Kiểm tra xem đã có user chưa
@@ -43,20 +44,22 @@ router.get(
 // facebook callback
 router.get(
   "/facebook/callback",
-  passport.authenticate("facebook", {
-    successRedirect: `/homepage`,
-    failureRedirect: "/failed",
-  }), async (req, res) => {
+  passport.authenticate("facebook", { failureRedirect: '/failed' }), async (req, res) => {
     try {
-      console.log('User info:', req.user);  // Kiểm tra thông tin người dùng
-      // Gọi hàm GoogleLogin trong controller
-      await userController.GoogleLogin(req, res);  // Đảm bảo hàm này được gọi sau khi xác thực thành công
+      // Kiểm tra xem đã có user chưa
+      console.log('User info:', req.user);  // Kiểm tra thông tin người dùng từ Google
+
+      if (req.user) {
+        await userController.FacebookLogin(req, res);  // Chắc chắn rằng GoogleLogin được gọi sau khi xác thực thành công
+      }
     } catch (error) {
-      console.error("Error during Google login:", error);
+      console.error("Error during Facebook login:", error);
       res.redirect("/failed");
     }
   }
 );
+
+
 router.get("/Userprofile", isAuth, userController.showProfile);
 router.get("/successLoginFacebook", userController.FacebookLogin);
 router.get("/homepage", userController.renderHomePage);
