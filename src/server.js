@@ -23,7 +23,7 @@ app.use(
     secret: "your-secret-key",  // Sử dụng một chuỗi bí mật
     resave: false,  // Không lưu lại session nếu không có thay đổi
     saveUninitialized: true,  // Lưu lại session mới mặc dù chưa được sử dụng
-    cookie: { secure: false },  // Đặt secure: true nếu bạn sử dụng HTTPS
+    cookie: { secure: true },  // Đặt secure: true nếu bạn sử dụng HTTPS
   })
 );
 app.use(passport.initialize());
