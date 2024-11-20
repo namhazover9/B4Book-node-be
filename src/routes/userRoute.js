@@ -20,10 +20,9 @@ router.get(
 // Auth Callback
 router.get(
   "/auth/google/callback",
-  passport.authenticate("google", {
-    successRedirect: "/success",
-    failureRedirect: "/failure",
-  })
+  passport.authenticate('google',{
+    successRedirect: "http://localhost:5173cuo"
+})
 );
 
 // facebook root

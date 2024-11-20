@@ -32,7 +32,7 @@ app.set("view engine", "ejs");
 
 //middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: "http://localhost:5173", methods:["GET", "POST", "PUT", "DELETE"], credentials: true }));
 
 //route
 app.use("/products", productRoute);
@@ -43,7 +43,7 @@ app.use("/order", orderRoute);
 app.use("/", userRoute);
 app.use("/admin", adminRoute);
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0',() => {
   console.log(`server is working on port: ${port}`);
   connectDb();
 });

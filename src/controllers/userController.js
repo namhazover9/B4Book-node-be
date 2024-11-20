@@ -106,36 +106,43 @@ const failureFacebookLogin = (req, res) => {
   res.send("Error");
 };
 
+// render home page and verify token
 const renderHomePage = (req, res) => {
   try {
     const { verifyToken } = req.body;
-    const verify = jwt.verify(verifyToken, process.env.Activation_sec);
-    if (!verify) {
-      return res.status(404).send({ message: "Token not found" });
+    
+    if (verifyToken) {
+
+      const verify = jwt.verify(verifyToken, process.env.Activation_sec);
+      if (!verify) {
+        return res.status(404).send({ message: "Token not valid" });
+      }
+      const token = jwt.sign({ _id: verify.user._id }, process.env.Jwt_sec, {
+        expiresIn: "5d",
+      });
+
+      return res.json({
+        success: true,
+        message: "Login success",
+        token,
+      });
     }
-    const token = jwt.sign({ _id: verify.user._id }, process.env.Jwt_sec, {
-      expiresIn: "5d",
-    });
-    res.json({
+    res.status(200).send({
       success: true,
-      message: "Login success",
-      token,
+      message: "Welcome to the homepage!",
     });
   } catch (error) {
     res.status(500).send({ message: error.message });
   }
 };
 
-
-
-
+// show profile for user
 const showProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     res.json(user);
   } catch (error) {}
 };
-
 
 // function register from normal user become a seller
 const registerShop = async (req, res) => {
@@ -189,5 +196,4 @@ module.exports = {
   renderHomePage,
   showProfile,
   registerShop,
-
 };

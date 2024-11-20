@@ -14,8 +14,11 @@ const productSchema = new mongoose.Schema(
     isApproved: { type: Boolean, required: true },
     isDeleted: { type: Boolean, required: true },
     category: [{type: String, required: true}],
-    shopId: { type: mongoose.Schema.Types.ObjectId, ref: 'Shop', required: true },
-
+    countClick: { type: Number},
+    numberOfRating: { type: Number},
+    rating: { type: Number},
+    salesNumber: { type: Number},
+    shopId: { type: mongoose.Schema.Types.ObjectId, ref: "Shop" },
   },
   {
     timestamps: true,
