@@ -41,7 +41,7 @@ const GoogleLogin = async (req, res) => {
     }
 
     // Tạo JWT token cho người dùng
-    const verifyToken = jwt.sign({ userId: user._id }, process.env.Activation_sec, {
+    const verifyToken = jwt.sign({ user}, process.env.Activation_sec, {
       expiresIn: "5m",
     });
     return res.json({
@@ -71,7 +71,7 @@ const addPassword = async (req, res) => {
   }
 };
 
-// add password for login by google
+
 
 
 // function login by facebook
