@@ -12,10 +12,9 @@ passport.deserializeUser(function (user, done) {
 passport.use(
   new GoogleStrategy(
     {
-       
       clientID: process.env.CLIENT_ID, // Your Credentials here.
       clientSecret: process.env.CLIENT_SECRET, // Your Credentials here.
-      callbackURL: `${process.env.DEPLOY_URL}/auth/google/callback`,
+      callbackURL: `https://b4book-node-be.onrender.com/auth/google/callback`,
       scope: ["email", "profile"],
       passReqToCallback: true,
     },
@@ -36,7 +35,7 @@ passport.use(
     {
       clientID: process.env.CLIENT_ID_FB, // Your Credentials here.
       clientSecret: process.env.CLIENT_SECRET_FB, // Your Credentials here.
-      callbackURL: `${process.env.DEPLOY_URL}/facebook/callback`,
+      callbackURL: `https://b4book-node-be.onrender.com/facebook/callback`,
       profileFields: ["id", "displayName", "photos", "email"],
       passReqToCallback: true,
     },
