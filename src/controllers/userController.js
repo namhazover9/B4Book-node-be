@@ -37,11 +37,10 @@ const GoogleLogin = async (req, res) => {
         role: customerRole ? [customerRole._id] : [],
       });
       console.log("User created successfully:", user);
-      res.redirect("/addPassword");
     }
 
     // Tạo JWT token cho người dùng
-    const verifyToken = jwt.sign({ user}, process.env.Activation_sec, {
+    const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
       expiresIn: "5m",
     });
     return res.json({
