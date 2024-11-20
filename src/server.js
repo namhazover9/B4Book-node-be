@@ -16,11 +16,17 @@ const app = express();
 const session = require("express-session");
 const path = require("path");
 app.use(bodyParser.json());
+
 app.use(
   session({
-    resave: false,
-    saveUninitialized: true,
-    secret: process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET, // Key bảo mật (tạo bí mật mạnh và không chia sẻ công khai)
+    resave: false, // Không lưu lại session nếu không thay đổi
+    saveUninitialized: false, // Không lưu trữ session mới nếu không có gì thay đổi
+    cookie: {
+      secure: process.env.NODE_ENV === 'production', // Cookie chỉ sử dụng trên HTTPS khi ở môi trường production
+      httpOnly: true, // Giới hạn khả năng truy cập cookie từ JavaScript
+      maxAge: 60 * 60 * 1000, // Thời gian hết hạn cookie (1 giờ)
+    },
   })
 );
 
@@ -29,7 +35,7 @@ app.set("view engine", "ejs");
 
 //middleware
 app.use(express.json());
-app.use(cors({ origin: "http://localhost:5173", methods:["GET", "POST", "PUT", "DELETE"], credentials: true }));
+app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 
 //route
 app.use("/products", productRoutes);
