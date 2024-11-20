@@ -15,40 +15,48 @@ const GoogleLogin = async (req, res) => {
   }
 
   try {
+    // Kiểm tra nếu người dùng đã tồn tại với Google login
     let user = await User.findOne({
       email: req.user.email,
       isActive: true,
       authProvider: "google",
     });
-    const customerRole = await Role.findOne({
-      name: "Customer",
-    });
+
+ 
+    const customerRole = await Role.findOne({ name: "Customer" });
+
     if (!user) {
+
       user = await User.create({
         email: req.user.email,
         userName: `${req.user.name.givenName} ${req.user.name.familyName}`,
         lastLogin: Date.now(),
         isActive: true,
-        avartar: req.user.photos[0].value,
+        avatar: req.user.photos ? req.user.photos[0].value : '', // Kiểm tra nếu có ảnh đại diện
         authProvider: "google",
         role: customerRole ? [customerRole._id] : [],
       });
-      console.log("Create Success");
+      console.log("User created successfully:", user);
     }
-    const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
+
+    // Tạo JWT token cho người dùng
+    const verifyToken = jwt.sign({ userId: user._id }, process.env.Activation_sec, {
       expiresIn: "5m",
     });
-    res.json({
+
+    // Trả về kết quả cho client
+    return res.json({
       success: true,
       message: "Google login successful",
       verifyToken,
     });
-    console.log("User:", user);
+
   } catch (error) {
-    console.error("Error in successGoogleLogin:", error);
-    res.status(500).send("An error occurred during Google login.");
+    console.error("Error in Google login:", error);
+    return res.status(500).send("An error occurred during Google login.");
   }
 };
+
 
 // add password for login by google
 

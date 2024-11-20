@@ -12,12 +12,20 @@ passport.deserializeUser(function (user, done) {
 passport.use(
   new GoogleStrategy(
     {
+       
       clientID: process.env.CLIENT_ID, // Your Credentials here.
       clientSecret: process.env.CLIENT_SECRET, // Your Credentials here.
       callbackURL: "http://localhost:8000/auth/google/callback",
+      scope: ["email", "profile"],
       passReqToCallback: true,
     },
     function (request, accessToken, refreshToken, profile, done) {
+      if (accessToken) {
+        console.log("Access Token:", accessToken);
+      }
+      if (profile) {
+        console.log("User Profile:", profile);
+      }
       return done(null, profile);
     }
   )
