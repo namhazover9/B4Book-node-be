@@ -7,11 +7,14 @@ const port = process.env.PORT || 8000;
 const bodyParser = require("body-parser");
 const passport = require("passport");
 //route
-const productRoutes = require("./routes/productRoute");
+const productRoute = require("./routes/productRoute");
 // const categoryRoutes = require("./routes/categoryRoute");
 // const inventoryRoutes = require("./routes/inventoryRoute");
 const userRoute = require("./routes/userRoute");
 const adminRoute = require("./routes/adminRoute")
+const shoppingCartRoute = require("./routes/shoppingCartRoute");
+const orderRoute = require("./routes/orderRoute");
+
 const app = express();
 
 const session = require("express-session");
@@ -51,7 +54,11 @@ app.use(cors({
 
 app.use(express.urlencoded({ extended: true }));
 //route
-app.use("/products", productRoutes);
+
+
+app.use("/products", productRoute);
+app.use("/cart", shoppingCartRoute);
+app.use("/order", orderRoute);
 
 app.use("/", userRoute);
 app.use("/admin", adminRoute);
