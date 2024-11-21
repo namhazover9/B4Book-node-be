@@ -50,7 +50,7 @@ app.use("/", userRoute);
 app.use("/admin", adminRoute);
 
 // Start server
-app.listen(port, "0.0.0.0", () => {
+app.listen(port, () => {
   console.log(`Server is working on port: ${port}`);
   connectDb();
 });
