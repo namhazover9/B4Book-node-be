@@ -19,6 +19,7 @@ const productSchema = new mongoose.Schema(
     rating: { type: Number},
     salesNumber: { type: Number},
     shopId: { type: mongoose.Schema.Types.ObjectId, ref: "Shop" },
+    voucherId: { type: mongoose.Schema.Types.ObjectId, ref: "Voucher" },
   },
   {
     timestamps: true,

@@ -7,12 +7,13 @@ const userSchema = new mongoose.Schema(
     value: { type: Number, required: true },
     expired: { type: Date, required: true },
     isActive: { type: Boolean, required: true },
+    shopId: { type: mongoose.Schema.Types.ObjectId, ref: "Shop" },
   },
   {
     timestamps: true,
   }
 );
 
-const User = mongoose.model("User", userSchema);
+const Voucher = mongoose.model("Voucher", userSchema);
 
-module.exports = User;
+module.exports = Voucher;
