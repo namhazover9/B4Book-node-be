@@ -7,7 +7,7 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: "b4b-node-be", // Thư mục trên Cloudinary
-    allowed_formats: ["jpg", "jpeg", "png"], // Định dạng được phép
+    allowed_formats: ["jpg", "jpeg", "png", "webp"], // Định dạng được phép
   },
 });
 
