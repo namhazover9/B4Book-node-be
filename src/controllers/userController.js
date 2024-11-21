@@ -43,12 +43,7 @@ const GoogleLogin = async (req, res) => {
     const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
       expiresIn: "5m",
     });
-    return res.json({
-      success: true,
-      message: "Google login successful",
-      verifyToken,
-    });
-
+    return res.redirect("http://localhost:5173?verifyToken=" + verifyToken);
   } catch (error) {
     console.error("Error in Google login:", error);
     return res.status(500).send("An error occurred during Google login.");
@@ -107,12 +102,7 @@ const FacebookLogin = async (req, res) => {
     const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
       expiresIn: "5m",
     });
-    res.json({
-      success: true,
-      message: "Facebook login successful",
-      verifyToken,
-    });
-    console.log("User:", user);
+    return res.redirect("http://localhost:5173?verifyToken=" + verifyToken);
   } catch (error) {
     console.error("Error in successFacebookLogin:", error);
     res.status(500).send("An error occurred during Facebook login.");

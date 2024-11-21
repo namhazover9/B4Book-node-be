@@ -14,14 +14,15 @@ router.get("/auth/google/callback", passport.authenticate('google', { failureRed
   try {
     // Kiểm tra xem đã có user chưa
     console.log('User info:', req.user);  // Kiểm tra thông tin người dùng từ Google
-
     // Nếu người dùng đã được xác thực, gọi hàm GoogleLogin trong controller
     if (req.user) {
-      await userController.GoogleLogin(req, res);  // Chắc chắn rằng GoogleLogin được gọi sau khi xác thực thành công
+      await userController.GoogleLogin(req, res); 
     }
+   
   } catch (error) {
     res.redirect("/failed");
   }
+  
 });
 
 
