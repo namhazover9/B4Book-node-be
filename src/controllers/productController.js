@@ -83,7 +83,6 @@ exports.createProduct = async (req, res) => {
       publisher,
       description,
       ISBN,
-      public_date,
       language,
       stock,
       isApproved,
@@ -101,7 +100,6 @@ exports.createProduct = async (req, res) => {
       publisher,
       description,
       ISBN,
-      public_date,
       language,
       stock,
       isApproved,
@@ -127,7 +125,6 @@ exports.updateProduct = async (req, res) => {
       publisher,
       description,
       ISBN,
-      public_date,
       language,
       stock,
       isApproved,
@@ -149,7 +146,6 @@ exports.updateProduct = async (req, res) => {
     product.publisher = publisher || product.publisher;
     product.description = description || product.description;
     product.ISBN = ISBN || product.ISBN;
-    product.public_date = public_date || product.public_date;
     product.language = language || product.language;
     product.stock = stock || product.stock;
     product.isApproved = isApproved || product.isApproved;

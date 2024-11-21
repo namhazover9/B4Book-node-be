@@ -9,7 +9,6 @@ const productSchema = new mongoose.Schema(
     publisher: { type: String, required: true },
     ISBN: { type: String, required: true },
     language: { type: String, required: true },
-    public_date: { type: Date, required: true },
     stock: { type: Number, required: true },
     isApproved: { type: Boolean, required: true, default: false },
     isDeleted: { type: Boolean, required: true, default: false },

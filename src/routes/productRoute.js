@@ -10,7 +10,7 @@ router.get("/", productController.getAllProducts);
 router.get("/:id", productController.getProductById);
 router.post("/create", upload.array("images", 10),  productController.createProduct);
 router.put("/:id", upload.array("images", 10), productController.updateProduct);
-router.delete("/:id", isShop, productController.deleteProduct);
+router.delete("/:id", productController.deleteProduct);
 router.delete("/:id/remove-image", productController.removeImage);
 router.get("/showRating/:id", productController.showRating);
 router.put("/rating/:id", isAuth, productController.ratingProduct);
