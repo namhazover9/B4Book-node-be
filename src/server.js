@@ -33,12 +33,26 @@ app.set("view engine", "ejs");
 
 //middleware
 app.use(express.json());
-app.use(cors({ origin: "http://localhost:5173/",methods: "GET,POST,PUT,DELETE", credentials: true }));
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173"); // URL frontend
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
+  res.setHeader("Access-Control-Allow-Credentials", "true"); // Cho phép cookie hoặc token qua header
+  next(); // Tiếp tục xử lý yêu cầu
+});
+app.use(cors({
+  origin: "http://localhost:5173", // URL frontend
+  methods: "GET, POST, PUT, DELETE",
+  credentials: true, // Cho phép cookie hoặc header Authorization
+}));
 
+app.use(express.urlencoded({ extended: true }));
 //route
 app.use("/products", productRoutes);
-// app.use("/categories", categoryRoutes);
-// app.use("/inventories", inventoryRoutes);
+
 app.use("/", userRoute);
 app.use("/admin", adminRoute);
 
