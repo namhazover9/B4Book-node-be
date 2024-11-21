@@ -64,14 +64,12 @@ const addPassword = async (req, res) => {
     if (!user) {
       return res.status(404).send({ message: "User not found" });
     }
+    console.log(user);
     return res.status(200).send({ message: "Password updated successfully" });
   } catch (error) {
     console.log(error);
   }
 };
-
-
-
 
 // function login by facebook
 const FacebookLogin = async (req, res) => {
@@ -167,7 +165,7 @@ const renderHomePage = (req, res) => {
       const token = jwt.sign({ _id: verify.user._id }, process.env.Jwt_sec, {
         expiresIn: "5d",
       });
-
+      
       return res.json({
         success: true,
         message: "Login success",

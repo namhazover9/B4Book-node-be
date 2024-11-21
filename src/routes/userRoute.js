@@ -2,9 +2,6 @@ const express = require("express");
 const router = express();
 const passport = require("passport");
 require("../passport");
-
-
-
 const userController = require("../controllers/userController");
 const { isAuth } = require("../middlewares/auth");
 
