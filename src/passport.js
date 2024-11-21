@@ -14,10 +14,17 @@ passport.use(
     {
       clientID: process.env.CLIENT_ID, // Your Credentials here.
       clientSecret: process.env.CLIENT_SECRET, // Your Credentials here.
-      callbackURL: "http://localhost:8000/auth/google/callback",
+      callbackURL: `https://b4book-node-be.onrender.com/auth/google/callback`,
+      scope: ["email", "profile"],
       passReqToCallback: true,
     },
     function (request, accessToken, refreshToken, profile, done) {
+      if (accessToken) {
+        console.log("Access Token:", accessToken);
+      }
+      if (profile) {
+        console.log("User Profile:", profile);
+      }
       return done(null, profile);
     }
   )
@@ -28,11 +35,17 @@ passport.use(
     {
       clientID: process.env.CLIENT_ID_FB, // Your Credentials here.
       clientSecret: process.env.CLIENT_SECRET_FB, // Your Credentials here.
-      callbackURL: "http://localhost:8000/facebook/callback",
+      callbackURL: `https://b4book-node-be.onrender.com/facebook/callback`,
       profileFields: ["id", "displayName", "photos", "email"],
       passReqToCallback: true,
     },
     function (req, accessToken, refreshToken, profile, done) {
+      if (accessToken) {
+        console.log("Access Token:", accessToken);
+      }
+      if (profile) {
+        console.log("User Profile:", profile);
+      }
       return done(null, profile);
     }
   )

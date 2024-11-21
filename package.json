@@ -14,6 +14,7 @@
     "b4book-node-be": "file:",
     "body-parser": "^1.20.3",
     "cloudinary": "^1.41.3",
+    "cookie-session": "^2.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",

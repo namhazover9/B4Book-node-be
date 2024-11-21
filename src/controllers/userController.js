@@ -15,40 +15,63 @@ const GoogleLogin = async (req, res) => {
   }
 
   try {
+    // Kiểm tra nếu người dùng đã tồn tại với Google login
     let user = await User.findOne({
       email: req.user.email,
       isActive: true,
       authProvider: "google",
     });
-    const customerRole = await Role.findOne({
-      name: "Customer",
-    });
+
+ 
+    const customerRole = await Role.findOne({ name: "Customer" });
+
     if (!user) {
+
       user = await User.create({
         email: req.user.email,
         userName: `${req.user.name.givenName} ${req.user.name.familyName}`,
         lastLogin: Date.now(),
         isActive: true,
-        avartar: req.user.photos[0].value,
+        avatar: req.user.photos ? req.user.photos[0].value : '', 
         authProvider: "google",
         role: customerRole ? [customerRole._id] : [],
       });
-      console.log("Create Success");
+      console.log("User created successfully:", user);
     }
+
+    // Tạo JWT token cho người dùng
     const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
       expiresIn: "5m",
     });
-    res.json({
+    return res.json({
       success: true,
       message: "Google login successful",
       verifyToken,
     });
-    console.log("User:", user);
+
   } catch (error) {
-    console.error("Error in successGoogleLogin:", error);
-    res.status(500).send("An error occurred during Google login.");
+    console.error("Error in Google login:", error);
+    return res.status(500).send("An error occurred during Google login.");
   }
 };
+
+const addPassword = async (req, res) => {
+  const { passWord } = req.body;
+  try {
+    const user = await User.findByIdAndUpdate(req.user._id,{
+      passWord:passWord},
+      { new: true });
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+    return res.status(200).send({ message: "Password updated successfully" });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+
+
 
 // function login by facebook
 const FacebookLogin = async (req, res) => {
@@ -97,6 +120,30 @@ const FacebookLogin = async (req, res) => {
     res.status(500).send("An error occurred during Facebook login.");
   }
 };
+
+const loginWithPassword = async(req,res) =>{
+  const {email, passWord} = req.body;
+  try {
+    const user = await User.findOne({
+     email:email,
+     passWord:passWord  
+    });
+    if(!user){
+      return res.status(404).send({message:"User not found"});
+    }
+    const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
+      expiresIn: "5m",
+    });
+    res.json({
+      success: true,
+      message: "Login success",
+      verifyToken,
+    });
+  }catch(error){
+    Console.log(error)
+  }
+  
+}
 
 const failureGoogleLogin = (req, res) => {
   res.send("Error");
@@ -196,4 +243,6 @@ module.exports = {
   renderHomePage,
   showProfile,
   registerShop,
+  loginWithPassword,
+  addPassword
 };
