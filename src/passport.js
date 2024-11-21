@@ -14,9 +14,8 @@ passport.use(
     {
       clientID: process.env.CLIENT_ID, // Your Credentials here.
       clientSecret: process.env.CLIENT_SECRET, // Your Credentials here.
-      callbackURL: `https://b4book-node-be.onrender.com/auth/google/callback`,
+      callbackURL: "/auth/google/callback",
       scope: ["email", "profile"],
-      passReqToCallback: true,
     },
     function (request, accessToken, refreshToken, profile, done) {
       if (accessToken) {
@@ -35,7 +34,7 @@ passport.use(
     {
       clientID: process.env.CLIENT_ID_FB, // Your Credentials here.
       clientSecret: process.env.CLIENT_SECRET_FB, // Your Credentials here.
-      callbackURL: `https://b4book-node-be.onrender.com/facebook/callback`,
+      callbackURL: "/facebook/callback",
       profileFields: ["id", "displayName", "photos", "email"],
       passReqToCallback: true,
     },
