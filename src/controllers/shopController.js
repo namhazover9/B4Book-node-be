@@ -1,6 +1,22 @@
 const Shop = require("../models/shop");
+const Voucher = require("../models/voucher");
 const createVoucher = async (req, res) => {
-    
+    const shopId = await Shop.findOne({ user: req.user._id });
+    const { name, code, value, expired, valid } = req.body;
+    try {
+      if(!name || !code || !value || !expired || !valid || !shopId) throw new Error("Missing required fields");
+      const newVoucher = await Voucher({
+        name: name,
+        code: code,
+        value: value,
+        validDate: valid,
+        expired: expired,
+        shopId: shopId,
+      });
+      res.status(201).json(newVoucher);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
 };
 
 const filterShop = async (req, res) => {

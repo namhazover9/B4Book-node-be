@@ -45,7 +45,7 @@ exports.removeImage = async (req, res) => {
 exports.getAllProducts = async (req, res) => {
   try {
     const products = await Product.find();
-    res.json(products);
+    res.json(products, success = true);
   } catch (error) {
     res.status(500).send({ message: error.message });
   }
