@@ -103,7 +103,7 @@ const showShop = async (req, res) => {
     try {
       const { page = 1, limit = 10, status } = req.query;
     const role = await Role.findOne({ name: "Customer" });
-    
+
       // Chuyển page và limit về số nguyên
       const pageNumber = parseInt(page, 10);
       const limitNumber = parseInt(limit, 10);
@@ -123,6 +123,7 @@ const showShop = async (req, res) => {
         currentPage: pageNumber,
         totalPages: Math.ceil(total / limitNumber), // Tổng số trang
         totalItems: total,
+        
       });
     } catch (error) {
       res.status(500).send({ message: error.message });

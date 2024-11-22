@@ -172,6 +172,28 @@ const filterShop = async (req, res) => {
   }
 };
 
+const searchShop = async (req, res) => {
+  try {
+    const { keyword } = req.query;
+
+    // Kiểm tra nếu keyword không tồn tại hoặc không phải là chuỗi
+    if (!keyword || typeof keyword !== "string") {
+      return res.status(400).json({ message: "Keyword must be a non-empty string" });
+    }
+
+    // Tìm kiếm sản phẩm
+    const products = await Shop.find({
+      $or: [
+        { shopName: { $regex: keyword, $options: "i" } },
+      ],
+    });
+
+    // Trả về danh sách sản phẩm
+    res.status(200).json(products);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 module.exports = {
   createVoucher,
@@ -180,5 +202,6 @@ module.exports = {
   getAllVoucher,
   activeOrDeactiveVoucher,
   deleteVoucher,
-  updateVoucher
+  updateVoucher,
+  searchShop
 };
