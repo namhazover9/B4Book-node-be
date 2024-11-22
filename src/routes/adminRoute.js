@@ -7,5 +7,6 @@ const { isAdmin } = require("../middlewares/auth");
 router.get("/showAllRegisterForm",isAdmin, adminController.showAllRegisterForm);
 router.put("/:id", isAdmin, adminController.approvedShop);
 router.get("/showAllUser",isAdmin, adminController.showAllUser);
-router.get("/showShopBlocked", adminController.showShopBlocked )
+router.get("/filterShop", adminController.showShop );
+router.get("/filterCustomer", adminController.showCustomer); 
 module.exports = router;
