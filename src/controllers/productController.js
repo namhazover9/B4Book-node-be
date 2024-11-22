@@ -263,4 +263,28 @@ exports.filterProduct = async (req, res) => {
   }
 };
 
+exports.searchProduct = async (req, res) => {
+  try {
+    const { keyword } = req.query;
+
+    // Kiểm tra nếu keyword không tồn tại hoặc không phải là chuỗi
+    if (!keyword || typeof keyword !== "string") {
+      return res.status(400).json({ message: "Keyword must be a non-empty string" });
+    }
+
+    // Tìm kiếm sản phẩm
+    const products = await Product.find({
+      $or: [
+        { title: { $regex: keyword, $options: "i" } },
+        { author: { $regex: keyword, $options: "i" } },
+      ],
+    });
+
+    // Trả về danh sách sản phẩm
+    res.status(200).json(products);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 
