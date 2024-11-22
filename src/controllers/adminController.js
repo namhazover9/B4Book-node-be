@@ -52,9 +52,10 @@ const showAllRegisterForm = async (req, res) => {
 // Show all user for admin
 const showAllUser = async (req, res) => {
   try {
+    const {role1, role2} = req.query;
     // Lấy tất cả các role có tên là "Customer" và "Shop"
     const roles = await Role.find({
-      name: { $in: ["Customer", "Shop"] }
+      name: { $in: [role1, role2] }
     });
 
     // Lấy các role _id từ kết quả
@@ -68,7 +69,6 @@ const showAllUser = async (req, res) => {
     res.status(500).send({ message: error.message });
   }
 };
-
 
 const showShop = async (req, res) => {
     try {

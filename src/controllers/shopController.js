@@ -3,16 +3,31 @@ const Voucher = require("../models/voucher");
 
 // Create voucher
 const createVoucher = async (req, res) => {
+  // create characters to generate random code
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  // generate random code function
+  const generateRandomCode = (length) => {
+    let code = '';
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      code += characters[randomIndex];
+    }
+    return code;
+  };
   try {
-    // Tìm shop dựa trên user._id
+    // find shop base on user._id
     const shop = await Shop.findOne({ user: req.user._id });
+    // create current date to compare with valid date and expired date
     const currentDate = new Date().setHours(0, 0, 0, 0);
+  
     if (!shop) throw new Error("Shop not found");
 
-    const { name, code, value, expired, valid } = req.body;
+    // input voucher from user
+    const { name, value, expired, valid } = req.body;
     let active = true;
+    let code = generateRandomCode(20);
 
-    // Kiểm tra điều kiện đầu vào
+    // check conditions input
     if (!name || !code || !value || !expired || !valid)
       throw new Error("Missing required fields");
 
@@ -21,48 +36,109 @@ const createVoucher = async (req, res) => {
 
     if (value <= 0) throw new Error("Value must be greater than 0");
 
-    // Nếu valid lớn hơn ngày hiện tại, không kích hoạt voucher
+    // if valid date is in the future, set active to false
     if (new Date(valid).getTime() > Date.now()) {
       active = false;
     }
 
-    // Tạo voucher mới
+    // Create new voucher 
     const newVoucher = new Voucher({
       name,
-      code,
+      code: code,
       value,
       validDate: valid,
       expired: expired,
       shopId: shop._id, 
       isActive: active,
     });
-
-    await newVoucher.save(); // Lưu voucher vào database
     res.status(201).json(newVoucher);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
+// get value voucher function
 const getValueVoucher = async (req, res) => {
   try {
-   
-
-    // Tìm voucher theo voucherId
+  
+    // find voucherId
     const voucher = await Voucher.findById(req.params.id); 
     if (!voucher) throw new Error("Voucher not found");
 
-    // Trả về thông tin voucher bao gồm value
+    //return voucher's value 
     res.status(200).json({ value: voucher.value });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
+// get all voucher function
 const getAllVoucher = async (req, res) => {
   try {
-    const vouchers = await Voucher.find({isActive: true}).populate();
+    const vouchers = await Voucher.find({isActive: true, isDeleted: false}).populate();
     res.status(200).json(vouchers);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// active or deactive vouchers
+const activeOrDeactiveVoucher = async (req, res) => {
+  try {
+    // create current date to compare with valid date and expired date
+    const currentDate = new Date().setHours(0, 0, 0, 0);
+
+    // activate vouchers are valid
+    await Voucher.updateMany(
+      { validDate: { $lte: currentDate }, expired: { $gte: currentDate } },
+      { isActive: true }
+    );
+
+    // Deactivate vouchers is expired
+    await Voucher.updateMany(
+      { expired: { $lt: currentDate } },
+      { isActive: false }
+    );
+
+    // take all vouchers active
+    const vouchersActive = await Voucher.find({
+      isActive: true,
+      expired: { $gte: currentDate },
+    });
+
+    // take all vouchers deactive
+    const voucherUnActive = await Voucher.find({
+      isActive: false,
+      expired: { $lt: currentDate },
+    });
+
+    res.status(200).json({ vouchersActive, voucherUnActive });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// delete voucher
+const deleteVoucher = async (req, res) => {
+  try {
+    // find voucher by id and update it, set isDeleted to true
+    const voucher = await Voucher.findByIdAndUpdate(req.params.id,{isDeleted: true},{new: true});
+    if (!voucher) throw new Error("Voucher not found");
+    res.status(200).json({ message: "Voucher deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// update voucher 
+const updateVoucher = async (req, res) => {
+  try {
+    // find voucher by id and update it
+    const voucher = await Voucher.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
+    if (!voucher) throw new Error("Voucher not found");
+    res.status(200).json({ message: "Voucher updated successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -101,5 +177,8 @@ module.exports = {
   createVoucher,
   filterShop,
   getValueVoucher,
-  getAllVoucher
+  getAllVoucher,
+  activeOrDeactiveVoucher,
+  deleteVoucher,
+  updateVoucher
 };

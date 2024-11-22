@@ -8,6 +8,8 @@ const userSchema = new mongoose.Schema(
     expired: { type: Date, required: true },
     validDate:{type:Date,required:true},
     isActive: { type: Boolean},
+    image:{type:String},
+    isDeleted: { type: Boolean, default: false },
     shopId: { type: mongoose.Schema.Types.ObjectId, ref: "Shop" },
   },
   {
