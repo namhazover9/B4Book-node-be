@@ -27,7 +27,7 @@ const orderSchema = new mongoose.Schema(
           required: true,
         },
         shippingCost: { type: Number, default: 0 },
-        voucherDiscount: { type: Number, default: 0 },
+        voucherDiscount: { type: mongoose.Schema.Types.ObjectId, ref: 'Voucher'},
         totalShopPrice: { type: Number, required: true },
       },
     ],

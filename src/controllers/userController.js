@@ -43,7 +43,7 @@ const GoogleLogin = async (req, res) => {
     const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
       expiresIn: "5m",
     });
-    return res.data({
+    return res.json({
       message: "Login success",
       verifyToken,
     })
@@ -105,7 +105,10 @@ const FacebookLogin = async (req, res) => {
     const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
       expiresIn: "5m",
     });
-    return res.redirect("http://localhost:5173?verifyToken=" + verifyToken);
+    return res.json({
+      message: "Login success",
+      verifyToken,
+    })
   } catch (error) {
     console.error("Error in successFacebookLogin:", error);
     res.status(500).send("An error occurred during Facebook login.");
@@ -135,14 +138,6 @@ const loginWithPassword = async(req,res) =>{
   }
   
 }
-
-const failureGoogleLogin = (req, res) => {
-  res.send("Error");
-};
-
-const failureFacebookLogin = (req, res) => {
-  res.send("Error");
-};
 
 // render home page and verify token
 const verifyToken = (req, res) => {
@@ -206,6 +201,24 @@ const registerShop = async (req, res) => {
     }
 };
 
+const addWishlistProduct = async (req, res) => {
+  try {
+  
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({ message: "Internal server error" });
+  }
+};
+
+const deleteWishlistProduct = async (req, res) => {
+  try {
+  
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({ message: "Internal server error" });
+  }
+};
+
 // const createRole = async (req, res) => {
 //   try {
 //     const { name } = req.body; // Lấy thuộc tính "name" từ body
@@ -224,9 +237,7 @@ const registerShop = async (req, res) => {
 module.exports = {
   loadAuth,
   GoogleLogin,
-  failureGoogleLogin,
   FacebookLogin,
-  failureFacebookLogin,
   verifyToken,
   showProfile,
   registerShop,

@@ -51,15 +51,23 @@ const showAllRegisterForm = async (req, res) => {
 }
 // Show all user for admin
 const showAllUser = async (req, res) => {
-    try {
-        const users = await User.find().populate({
-            path: "role", 
-            select: "name",
-        });
-        res.status(200).json(users);
-    } catch (error) {
-        res.status(500).send({ message: error.message });
-    }
+  try {
+    const {role1, role2} = req.query;
+    // Lấy tất cả các role có tên là "Customer" và "Shop"
+    const roles = await Role.find({
+      name: { $in: [role1, role2] }
+    });
+
+    // Lấy các role _id từ kết quả
+    const roleIds = roles.map(role => role._id);
+
+    // Lọc tất cả người dùng có role là Customer hoặc Shop
+    const users = await User.find({ role: { $in: roleIds } });
+
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
 };
 
 const showShop = async (req, res) => {
@@ -89,6 +97,8 @@ const showShop = async (req, res) => {
       res.status(500).send({ message: error.message });
     }
   };
+
+
   const showCustomer = async (req, res) => {
     try {
       const { page = 1, limit = 10, status } = req.query;
