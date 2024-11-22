@@ -43,7 +43,10 @@ const GoogleLogin = async (req, res) => {
     const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
       expiresIn: "5m",
     });
-    return res.redirect("http://localhost:5173?verifyToken=" + verifyToken);
+    return res.data({
+      message: "Login success",
+      verifyToken,
+    })
   } catch (error) {
     console.error("Error in Google login:", error);
     return res.status(500).send("An error occurred during Google login.");
@@ -142,7 +145,7 @@ const failureFacebookLogin = (req, res) => {
 };
 
 // render home page and verify token
-const renderHomePage = (req, res) => {
+const verifyToken = (req, res) => {
   try {
     const { verifyToken } = req.body;
     
@@ -158,14 +161,10 @@ const renderHomePage = (req, res) => {
       
       return res.json({
         success: true,
-        message: "Login success",
+        message: "verify success",
         token,
       });
     }
-    res.status(200).send({
-      success: true,
-      message: "Welcome to the homepage!",
-    });
   } catch (error) {
     res.status(500).send({ message: error.message });
   }
@@ -228,7 +227,7 @@ module.exports = {
   failureGoogleLogin,
   FacebookLogin,
   failureFacebookLogin,
-  renderHomePage,
+  verifyToken,
   showProfile,
   registerShop,
   loginWithPassword,

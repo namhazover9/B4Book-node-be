@@ -229,3 +229,38 @@ exports.showRating = async (req, res) => {
     
   }
 }
+
+exports.filterProduct = async (req, res) => {
+  try {
+    const { category, price, author, page = 1, limit = 10 } = req.query;
+
+    const query = {};
+    if (category) query.category = category;
+    if (price) query.price = price;
+    if (author) query.author = author;
+
+    
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    
+    const products = await Product.find(query)
+      .skip((pageNumber - 1) * limitNumber) 
+      .limit(limitNumber); 
+
+    
+    const total = await Product.countDocuments(query);
+
+    
+    res.status(200).json({
+      data: products,
+      currentPage: pageNumber,
+      totalPages: Math.ceil(total / limitNumber), 
+      totalItems: total,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+

@@ -62,4 +62,14 @@ const showAllUser = async (req, res) => {
     }
 };
 
-module.exports = { approvedShop, showAllRegisterForm, showAllUser };
+const showShopBlocked = async (req, res) => {
+    try {
+        const respone = await Shop.find({ isActive: false });
+        res.status(200).json(respone);
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+}
+
+
+module.exports = { approvedShop, showAllRegisterForm, showAllUser, showShopBlocked };
