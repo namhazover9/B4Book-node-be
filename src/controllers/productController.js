@@ -232,34 +232,39 @@ exports.showRating = async (req, res) => {
 
 exports.filterProduct = async (req, res) => {
   try {
-    const { category, price, author, page = 1, limit = 10 } = req.query;
+    const { category, minPrice, maxPrice, author, page = 1, limit = 10 } = req.query;
 
+    // Tạo điều kiện lọc (query)
     const query = {};
-    if (category) query.category = { $in: category.split(",") };
-    if (price) query.price = price;
-    if (author) query.author = { $in: author.split(",") };
+    if (category) query.category = { $in: category.split(",") }; // Lọc nhiều category
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = parseFloat(minPrice); // Lớn hơn hoặc bằng minPrice
+      if (maxPrice) query.price.$lte = parseFloat(maxPrice); // Nhỏ hơn hoặc bằng maxPrice
+    }
+    if (author) query.author = { $in: author.split(",") }; // Lọc nhiều author
 
-    
+    // Chuyển đổi page và limit thành số nguyên
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
 
-    
+    // Truy vấn danh sách sản phẩm dựa trên điều kiện
     const products = await Product.find(query)
-      .skip((pageNumber - 1) * limitNumber) 
-      .limit(limitNumber); 
+      .skip((pageNumber - 1) * limitNumber) // Bỏ qua các sản phẩm của trang trước đó
+      .limit(limitNumber); // Giới hạn số lượng sản phẩm trả về
 
-    
+    // Đếm tổng số sản phẩm phù hợp
     const total = await Product.countDocuments(query);
 
-    
+    // Trả về kết quả
     res.status(200).json({
       data: products,
       currentPage: pageNumber,
-      totalPages: Math.ceil(total / limitNumber), 
-      totalItems: total,
+      totalPages: Math.ceil(total / limitNumber), // Tính tổng số trang
+      totalItems: total, // Tổng số sản phẩm
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: error.message }); // Xử lý lỗi
   }
 };
 
