@@ -235,9 +235,9 @@ exports.filterProduct = async (req, res) => {
     const { category, price, author, page = 1, limit = 10 } = req.query;
 
     const query = {};
-    if (category) query.category = category;
+    if (category) query.category = { $in: category.split(",") };
     if (price) query.price = price;
-    if (author) query.author = author;
+    if (author) query.author = { $in: author.split(",") };
 
     
     const pageNumber = parseInt(page, 10);
@@ -258,6 +258,30 @@ exports.filterProduct = async (req, res) => {
       totalPages: Math.ceil(total / limitNumber), 
       totalItems: total,
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.searchProduct = async (req, res) => {
+  try {
+    const { keyword } = req.query;
+
+    // Kiểm tra nếu keyword không tồn tại hoặc không phải là chuỗi
+    if (!keyword || typeof keyword !== "string") {
+      return res.status(400).json({ message: "Keyword must be a non-empty string" });
+    }
+
+    // Tìm kiếm sản phẩm
+    const products = await Product.find({
+      $or: [
+        { title: { $regex: keyword, $options: "i" } },
+        { author: { $regex: keyword, $options: "i" } },
+      ],
+    });
+
+    // Trả về danh sách sản phẩm
+    res.status(200).json(products);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

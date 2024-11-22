@@ -5,6 +5,7 @@ const { isShop, isAuth } = require("../middlewares/auth");
 const upload = require("../utils/multer");
 
 router.post("/upload", upload.array("images", 10), productController.uploadImages);
+router.get("/search", productController.searchProduct);
 router.get("/filter", productController.filterProduct);
 router.get("/", productController.getAllProducts);
 router.get("/:id", productController.getProductById);
