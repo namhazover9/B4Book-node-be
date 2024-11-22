@@ -62,14 +62,62 @@ const showAllUser = async (req, res) => {
     }
 };
 
-const showShopBlocked = async (req, res) => {
+const showShop = async (req, res) => {
     try {
-        const respone = await Shop.find({ isActive: false });
-        res.status(200).json(respone);
+      const { page = 1, limit = 10, status } = req.query;
+  
+      // Chuyển page và limit về số nguyên
+      const pageNumber = parseInt(page, 10);
+      const limitNumber = parseInt(limit, 10);
+  
+      // Tìm kiếm các shop bị khóa với pagination
+      const shops = await Shop.find({ isActive: status })
+        .skip((pageNumber - 1) * limitNumber) // Bỏ qua các phần tử của các trang trước
+        .limit(limitNumber); // Giới hạn số lượng phần tử trong một trang
+
+      // Đếm tổng số shop bị khóa
+      const total = await Shop.countDocuments({ isActive: false });
+  
+      // Trả về kết quả
+      res.status(200).json({
+        data: shops,
+        currentPage: pageNumber,
+        totalPages: Math.ceil(total / limitNumber), // Tổng số trang
+        totalItems: total,
+      });
     } catch (error) {
-        res.status(500).send({ message: error.message });
+      res.status(500).send({ message: error.message });
     }
-}
+  };
+  const showCustomer = async (req, res) => {
+    try {
+      const { page = 1, limit = 10, status } = req.query;
+    const role = await Role.findOne({ name: "Customer" });
+    
+      // Chuyển page và limit về số nguyên
+      const pageNumber = parseInt(page, 10);
+      const limitNumber = parseInt(limit, 10);
+  
+      // Tìm kiếm các customer với pagination
+      const shops = await User.find({ isActive: status ,role: { $elemMatch: { $eq: role._id } }, })
+      
+        .skip((pageNumber - 1) * limitNumber) // Bỏ qua các phần tử của các trang trước
+        .limit(limitNumber); // Giới hạn số lượng phần tử trong một trang
+
+      // Đếm tổng số User 
+      const total = await User.countDocuments({ isActive: status,role: { $elemMatch: { $eq: role._id } } });
+  
+      // Trả về kết quả
+      res.status(200).json({
+        data: shops,
+        currentPage: pageNumber,
+        totalPages: Math.ceil(total / limitNumber), // Tổng số trang
+        totalItems: total,
+      });
+    } catch (error) {
+      res.status(500).send({ message: error.message });
+    }
+  };
 
 
-module.exports = { approvedShop, showAllRegisterForm, showAllUser, showShopBlocked };
+module.exports = { approvedShop, showAllRegisterForm, showAllUser, showShop,showCustomer };

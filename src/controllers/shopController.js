@@ -31,7 +31,9 @@ const filterShop = async (req, res) => {
 };
 
 
+
+
 module.exports = {
   createVoucher,
-  filterShop
+  filterShop,
 };
