@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema(
     value: { type: Number, required: true },
     expired: { type: Date, required: true },
     validDate:{type:Date,required:true},
-    isActive: { type: Boolean, required: true },
+    isActive: { type: Boolean},
     shopId: { type: mongoose.Schema.Types.ObjectId, ref: "Shop" },
   },
   {
