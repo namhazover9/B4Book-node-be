@@ -235,9 +235,9 @@ exports.filterProduct = async (req, res) => {
     const { category, price, author, page = 1, limit = 10 } = req.query;
 
     const query = {};
-    if (category) query.category = category;
+    if (category) query.category = { $in: category.split(",") };
     if (price) query.price = price;
-    if (author) query.author = author;
+    if (author) query.author = { $in: author.split(",") };
 
     
     const pageNumber = parseInt(page, 10);
