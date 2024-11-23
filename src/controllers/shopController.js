@@ -50,6 +50,7 @@ const createVoucher = async (req, res) => {
       expired: expired,
       shopId: shop._id, 
       isActive: active,
+      isDeleted: false
     });
     res.status(201).json(newVoucher);
   } catch (error) {
@@ -75,7 +76,7 @@ const getValueVoucher = async (req, res) => {
 // get all voucher function
 const getAllVoucher = async (req, res) => {
   try {
-    const vouchers = await Voucher.find({isActive: true, isDeleted: false}).populate();
+    const vouchers = await Voucher.find({isActive: true},{isDeleted: false});
     res.status(200).json(vouchers);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -202,5 +203,6 @@ module.exports = {
   getAllVoucher,
   activeOrDeactiveVoucher,
   deleteVoucher,
-  updateVoucher
+  updateVoucher,
+  searchShop
 };

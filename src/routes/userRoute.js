@@ -59,7 +59,7 @@ router.post("/verify", userController.verifyToken);
 router.post("/registerShop",isAuth, userController.registerShop);
 router.post("/login", userController.loginWithPassword);
 router.put("/addPassword",isAuth, userController.addPassword);
-
-
+router.post('/addWishlistProduct/:id',isAuth,userController.addWishlistProduct);
+router.delete("/deleteWishlistProduct/:id",isAuth,userController.deleteWishlistProduct);
 
 module.exports = router;

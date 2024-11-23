@@ -4,6 +4,8 @@ const Role = require("../models/role");
 const Shop = require("../models/shop");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
+const WishlistProduct = require("../models/wishlistProduct");
+const Product = require("../models/product");
 dotenv.config();
 const loadAuth = (req, res) => {
   res.render(path.join(__dirname, "../views/user.ejs"));
@@ -201,18 +203,66 @@ const registerShop = async (req, res) => {
     }
 };
 
+// add product to wishlist
 const addWishlistProduct = async (req, res) => {
   try {
-  
+    // find product by id
+    const product = await Product.findById(req.params.id);
+    // check if product not found
+    if (!product) {
+      return res.status(404).send({ message: "Product not found" });
+    }
+
+    // find user by 
+    const user = await User.findById(req.user._id);
+    // check user if user not found
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+
+    // find wishlist product by product id and user id
+    const wishlistProduct = await WishlistProduct.findOne({
+      product: product._id,
+      user: user._id,
+    })
+    // if wishlist product is existed return 
+    if (wishlistProduct) {
+      return res.status(400).send({ message: "Product already added to wishlist" });
+    }
+
+    // add wishlist product into database
+    await WishlistProduct.create({
+      product: product._id,
+      user: user._id,
+    })
+    // respond with success message
+    res.status(200).send({ message: "Product added to wishlist" });
   } catch (error) {
     console.log(error);
     return res.status(500).send({ message: "Internal server error" });
   }
 };
 
+// delete product from wishlist
 const deleteWishlistProduct = async (req, res) => {
   try {
-  
+    // find wishlist product by id and delete it
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).send({ message: "Product not found" });
+    }
+    const wishlistProduct = await WishlistProduct.findOneAndDelete({
+      product: product._id,
+      user: req.user._id,
+    })
+    
+    // check if wishlist not found
+    if (!wishlistProduct ) {
+      return res.status(404).send({ message: "Product does not exist in wishlist" });
+    }
+
+    // respond status with success message
+    res.status(200).send({ message: "Product deleted from wishlist" });
   } catch (error) {
     console.log(error);
     return res.status(500).send({ message: "Internal server error" });
@@ -242,5 +292,7 @@ module.exports = {
   showProfile,
   registerShop,
   loginWithPassword,
-  addPassword
+  addPassword,
+  addWishlistProduct,
+  deleteWishlistProduct
 };
