@@ -1,19 +1,10 @@
+const { generateRandomCode } = require("../middlewares/generateCode");
 const Shop = require("../models/shop");
 const Voucher = require("../models/voucher");
 
 // Create voucher
 const createVoucher = async (req, res) => {
-  // create characters to generate random code
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  // generate random code function
-  const generateRandomCode = (length) => {
-    let code = '';
-    for (let i = 0; i < length; i++) {
-      const randomIndex = Math.floor(Math.random() * characters.length);
-      code += characters[randomIndex];
-    }
-    return code;
-  };
+
   try {
     // find shop base on user._id
     const shop = await Shop.findOne({ user: req.user._id });

@@ -6,6 +6,9 @@ const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 const WishlistProduct = require("../models/wishlistProduct");
 const Product = require("../models/product");
+const bcrypt = require("bcrypt");
+const { sendMail } = require("../middlewares/sendEmailPassword");
+const { generateRandomCode } = require("../middlewares/generateCode");
 dotenv.config();
 const loadAuth = (req, res) => {
   res.render(path.join(__dirname, "../views/user.ejs"));
@@ -24,11 +27,9 @@ const GoogleLogin = async (req, res) => {
       authProvider: "google",
     });
 
- 
     const customerRole = await Role.findOne({ name: "Customer" });
 
     if (!user) {
-
       user = await User.create({
         email: req.user.email,
         userName: `${req.user.name.givenName} ${req.user.name.familyName}`,
@@ -39,6 +40,14 @@ const GoogleLogin = async (req, res) => {
         role: customerRole ? [customerRole._id] : [],
       });
       console.log("User created successfully:", user);
+      const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
+        expiresIn: "5m",
+      });
+      return res.json({
+       success: true,
+       message:"New user",
+      verifyToken,
+      })
     }
 
     // Tạo JWT token cho người dùng
@@ -52,22 +61,6 @@ const GoogleLogin = async (req, res) => {
   } catch (error) {
     console.error("Error in Google login:", error);
     return res.status(500).send("An error occurred during Google login.");
-  }
-};
-
-const addPassword = async (req, res) => {
-  const { passWord } = req.body;
-  try {
-    const user = await User.findByIdAndUpdate(req.user._id,{
-      passWord:passWord},
-      { new: true });
-    if (!user) {
-      return res.status(404).send({ message: "User not found" });
-    }
-    console.log(user);
-    return res.status(200).send({ message: "Password updated successfully" });
-  } catch (error) {
-    console.log(error);
   }
 };
 
@@ -117,15 +110,39 @@ const FacebookLogin = async (req, res) => {
   }
 };
 
+// add password function
+const addPassword = async (req, res) => {
+  const { passWord } = req.body;
+  try {
+    const hash = await bcrypt.hash(passWord, 10);
+    const user = await User.findByIdAndUpdate(req.user._id,{
+      passWord:hash},
+      { new: true });
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+    console.log(user);
+    return res.status(200).send({ message: "Password updated successfully" });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+// login by gmail and password
 const loginWithPassword = async(req,res) =>{
   const {email, passWord} = req.body;
   try {
+    
     const user = await User.findOne({
      email:email,
-     passWord:passWord  
+     authProvider:"google"
     });
     if(!user){
       return res.status(404).send({message:"User not found"});
+    }
+    const comparePassword = await bcrypt.compare(passWord,user.passWord);
+    if(!comparePassword){
+      return res.status(404).send({message:"Wrong password"});
     }
     const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
       expiresIn: "5m",
@@ -140,6 +157,31 @@ const loginWithPassword = async(req,res) =>{
   }
   
 }
+
+// reset password fucntion
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+ 
+  // generate random code function
+ 
+  try {
+    const randomPassword = generateRandomCode(20);
+    const hash = await bcrypt.hash(randomPassword, 10);
+    const user = await User.findOneAndUpdate({ email: email, authProvider: "google" }, { passWord: hash }, { new: true });
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+
+    await sendMail(email, "Reset password", randomPassword);
+    
+    return res.json({
+      success: true,  
+      message: "Reset password",
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 // render home page and verify token
 const verifyToken = (req, res) => {
@@ -269,6 +311,32 @@ const deleteWishlistProduct = async (req, res) => {
   }
 };
 
+
+// update profile
+const updateProfileUser = async (req, res) => {
+  try {
+    const updates = req.body;
+    //check if password is provided
+    if(updates.passWord){
+      // hash password
+      const hash = await bcrypt.hash(updates.passWord, 10);
+      // update password
+      updates.passWord = hash
+    }
+    // find user by id and update it
+    const user = await User.findOneAndUpdate(req.user, updates, {
+      new: true,
+    });
+    
+    if (!user) throw new Error("User not found");
+    res.status(200).json({ message: "User updated successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+
+
 // const createRole = async (req, res) => {
 //   try {
 //     const { name } = req.body; // Lấy thuộc tính "name" từ body
@@ -294,5 +362,7 @@ module.exports = {
   loginWithPassword,
   addPassword,
   addWishlistProduct,
-  deleteWishlistProduct
+  deleteWishlistProduct,
+  forgotPassword,
+  updateProfileUser
 };
