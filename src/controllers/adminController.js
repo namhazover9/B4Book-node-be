@@ -114,6 +114,21 @@ const showAllUser = async (req, res) => {
   }
 };
 
+const activeOrDeactive = async (req, res) => {
+  try {
+    const { id, status } = req.query;
+    const response = await User.findByIdAndUpdate(
+      id,
+      { isActive: status },
+      { new: true }
+    );
+    if (!response) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json({message: "Success", success: true});
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+}
 
-
-module.exports = { approvedShop, showAllRegisterForm, showAllUser};
+module.exports = { approvedShop, showAllRegisterForm, showAllUser, activeOrDeactive };
