@@ -8,8 +8,8 @@ router.get("/filter", shop.filterShop);
 router.post("/createVoucher",isShop, shop.createVoucher);
 router.get("/getAllVoucher", shop.getAllVoucher);
 router.put("/activeorDeactiveVoucher", shop.activeOrDeactiveVoucher);
-router.put("/deleteVoucher",isShop, shop.deleteVoucher);
-router.put("/updateVoucher",isShop, shop.updateVoucher);
+router.put("/deleteVoucher/:id",isShop, shop.deleteVoucher);
+router.put("/updateVoucher/:id",isShop, shop.updateVoucher);
 router.get("/:id", shop.getValueVoucher);
 
 module.exports = router;

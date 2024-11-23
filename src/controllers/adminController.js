@@ -49,86 +49,71 @@ const showAllRegisterForm = async (req, res) => {
         res.status(500).send({ message: error.message });
     }
 }
-// Show all user for admin
+// Show all user and filter by role
 const showAllUser = async (req, res) => {
   try {
-    const {role1, role2} = req.query;
-    // Lấy tất cả các role có tên là "Customer" và "Shop"
-    const roles = await Role.find({
-      name: { $in: [role1, role2] }
-    });
+    const { role, status, page = 1, limit = 10 } = req.query; // Default: page 1, 10 items per page
+    const skip = (page - 1) * limit; // Calculate how many documents to skip
+    
+    // check role Customer
+    if (role === "Customer") {
+      const roleDoc = await Role.findOne({ name: role });
+      const customers = await User.find({ 
+        isActive: status, 
+        role: { $elemMatch: { $eq: roleDoc._id } } 
+      })
+        .skip(skip)
+        .limit(parseInt(limit)); // Apply pagination
+      const total = await User.countDocuments({ 
+        isActive: status, 
+        role: { $elemMatch: { $eq: roleDoc._id } } 
+      }); // Total documents count
+      res.status(200).json({ 
+        total, 
+        page: parseInt(page), 
+        limit: parseInt(limit), 
+        customers 
+      });
+    } 
 
-    // Lấy các role _id từ kết quả
-    const roleIds = roles.map(role => role._id);
-
-    // Lọc tất cả người dùng có role là Customer hoặc Shop
-    const users = await User.find({ role: { $in: roleIds } });
-
-    res.status(200).json(users);
+    // check role Shop
+    else if (role === "Shop") {
+      const roleDoc = await Role.findOne({ name: role });
+      const shops = await User.find({ 
+        isActive: status, 
+        role: { $elemMatch: { $eq: roleDoc._id } } 
+      })
+        .skip(skip)
+        .limit(parseInt(limit)); // Apply pagination
+      const total = await User.countDocuments({ 
+        isActive: status, 
+        role: { $elemMatch: { $eq: roleDoc._id } } 
+      }); // Total documents count
+      res.status(200).json({ 
+        total, 
+        page: parseInt(page), 
+        limit: parseInt(limit), 
+        shops 
+      });
+    } 
+    // if user want to display all user
+    else {
+      const users = await User.find()
+        .skip(skip)
+        .limit(parseInt(limit)); // Apply pagination
+      const total = await User.countDocuments(); // Total documents count
+      res.status(200).json({ 
+        total, 
+        page: parseInt(page), 
+        limit: parseInt(limit), 
+        users 
+      });
+    }
   } catch (error) {
     res.status(500).send({ message: error.message });
   }
 };
 
-const showShop = async (req, res) => {
-    try {
-      const { page = 1, limit = 10, status } = req.query;
-  
-      // Chuyển page và limit về số nguyên
-      const pageNumber = parseInt(page, 10);
-      const limitNumber = parseInt(limit, 10);
-  
-      // Tìm kiếm các shop bị khóa với pagination
-      const shops = await Shop.find({ isActive: status })
-        .skip((pageNumber - 1) * limitNumber) // Bỏ qua các phần tử của các trang trước
-        .limit(limitNumber); // Giới hạn số lượng phần tử trong một trang
-
-      // Đếm tổng số shop bị khóa
-      const total = await Shop.countDocuments({ isActive: false });
-  
-      // Trả về kết quả
-      res.status(200).json({
-        data: shops,
-        currentPage: pageNumber,
-        totalPages: Math.ceil(total / limitNumber), // Tổng số trang
-        totalItems: total,
-      });
-    } catch (error) {
-      res.status(500).send({ message: error.message });
-    }
-  };
 
 
-  const showCustomer = async (req, res) => {
-    try {
-      const { page = 1, limit = 10, status } = req.query;
-    const role = await Role.findOne({ name: "Customer" });
-
-      // Chuyển page và limit về số nguyên
-      const pageNumber = parseInt(page, 10);
-      const limitNumber = parseInt(limit, 10);
-  
-      // Tìm kiếm các customer với pagination
-      const shops = await User.find({ isActive: status ,role: { $elemMatch: { $eq: role._id } }, })
-      
-        .skip((pageNumber - 1) * limitNumber) // Bỏ qua các phần tử của các trang trước
-        .limit(limitNumber); // Giới hạn số lượng phần tử trong một trang
-
-      // Đếm tổng số User 
-      const total = await User.countDocuments({ isActive: status,role: { $elemMatch: { $eq: role._id } } });
-  
-      // Trả về kết quả
-      res.status(200).json({
-        data: shops,
-        currentPage: pageNumber,
-        totalPages: Math.ceil(total / limitNumber), // Tổng số trang
-        totalItems: total,
-        
-      });
-    } catch (error) {
-      res.status(500).send({ message: error.message });
-    }
-  };
-
-
-module.exports = { approvedShop, showAllRegisterForm, showAllUser, showShop,showCustomer };
+module.exports = { approvedShop, showAllRegisterForm, showAllUser};
