@@ -7,6 +7,8 @@ const passport = require("passport");
 const session = require("express-session");
 const bodyParser = require("body-parser");
 const path = require("path");
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./swagger.json');
 
 // Routes
 const productRoute = require("./routes/productRoute");
@@ -14,16 +16,13 @@ const userRoute = require("./routes/userRoute");
 const adminRoute = require("./routes/adminRoute");
 const shoppingCartRoute = require("./routes/shoppingCartRoute");
 const orderRoute = require("./routes/orderRoute");
+const corsConfig = require("./configs/cors.config");
 
 const app = express();
 const port = process.env.PORT || 8000;
 
 // Middleware
-app.use(cors({
-  origin: "http://localhost:5173",
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true,
-}));
+app.use(cors(corsConfig));
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -43,6 +42,9 @@ app.set("views", path.join(__dirname, "./src/views"));
 app.set("view engine", "ejs");
 
 // Routes
+// api documentations
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 app.use("/products", productRoute);
 app.use("/cart", shoppingCartRoute);
 app.use("/order", orderRoute);
