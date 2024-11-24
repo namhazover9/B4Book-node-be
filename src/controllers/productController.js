@@ -186,24 +186,19 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
-exports.ratingProduct = async (req, res) => {
+exports.feebackProduct = async (req, res) => {
   try {
-    const { ratting } = req.body; 
+    const { rating, comment } = req.body; 
     const productId = req.params.id; 
-
-    
-    const product = await Product.findByIdAndUpdate(
-      productId,
-      {
-        $inc: { numberOfRating: 1, rating: ratting }, 
-      },
-      { new: true } 
-    );
+    const user = req.user._id;
+    const product = await Product.findByIdAndUpdate(productId, { $inc: { numberOfRating: 1} }, { new: true });
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
+    product.feedBacks.push({ userId: user, rating: rating, comment: comment });
+    await product.save();
     res.status(200).json({
       message: "Ratting updated successfully",
       product,
@@ -220,14 +215,64 @@ exports.showRating = async (req, res) => {
   try {
     const productId = req.params.id; 
     const product = await Product.findById(productId);
-    const resultRating = product.rating / product.numberOfRating;
+
+    // check if product not found
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
-    res.json(resultRating);
+
+    // check if product has no feedback
+    if (product.feedBacks.length === 0) {
+      return res.status(200).json({
+        message: "No ratings available yet for this product",
+        averageRating: 0,
+      });
+    }
+
+    // filter product feedback (rating not null)
+    const validFeedbacks = product.feedBacks.filter((fb) => fb.rating !== null && fb.rating !== undefined);
+
+    // if product has no valid feedback
+    if (validFeedbacks.length === 0) {
+      return res.status(200).json({
+        message: "No valid ratings available for this product",
+        averageRating: 0,
+      });
+    }
+
+    // calculate average ratingResult
+    const totalRating = validFeedbacks.reduce((acc, cur) => acc + cur.rating, 0);
+    product.ratingResult = totalRating / validFeedbacks.length;
+
+    res.status(200).json({
+      message: "Rating calculated successfully",
+      total: product.ratingResult,
+    });
   } catch (error) {
-    
+    res.status(500).json({
+      message: "Error retrieving product rating",
+      error: error.message,
+    });
   }
+};
+
+exports.updateFeedbacks = async (req, res) => {
+  try {
+    const productId = req.params.id; 
+    const product = await Product.findById(productId);
+
+    // check if product not found
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+    const feedbacks = product.feedBacks._id;
+    
+    }catch(error){
+      res.status(500).json({
+        message: "Error updating ratting",
+        error: error.message,
+      });
+    }
 }
 
 exports.filterProduct = async (req, res) => {

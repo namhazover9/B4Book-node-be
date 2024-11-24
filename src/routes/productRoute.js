@@ -14,6 +14,6 @@ router.put("/:id", upload.array("images", 10), productController.updateProduct);
 router.delete("/:id", productController.deleteProduct);
 router.delete("/:id/remove-image", productController.removeImage);
 router.get("/showRating/:id", productController.showRating);
-router.put("/rating/:id", isAuth, productController.ratingProduct);
+router.put("/feedback/:id", isAuth, productController.feebackProduct);
 
 module.exports = router;
