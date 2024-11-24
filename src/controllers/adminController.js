@@ -114,9 +114,11 @@ const showAllUser = async (req, res) => {
   }
 };
 
+// active or deactive account
 const activeOrDeactive = async (req, res) => {
   try {
-    const { id, status } = req.query;
+    const { id, status,role } = req.query;
+   if (role === "Customer") {
     const response = await User.findByIdAndUpdate(
       id,
       { isActive: status },
@@ -126,6 +128,19 @@ const activeOrDeactive = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
     res.status(200).json({message: "Success", success: true});
+  }
+  
+  else if (role === "Shop") {
+    const response = await Shop.findByIdAndUpdate(
+      id,
+      { isActive: status },
+      { new: true }
+    );
+    if (!response) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json({message: "Success", success: true});
+  }
   } catch (error) {
     res.status(500).send({ message: error.message });
   }

@@ -23,12 +23,15 @@ const GoogleLogin = async (req, res) => {
     // Kiểm tra nếu người dùng đã tồn tại với Google login
     let user = await User.findOne({
       email: req.user.email,
-      isActive: true,
       authProvider: "google",
     });
-
+    if (user.isActive === false) {
+      return res.json({
+        success: false,
+        message: "Your account is not active",
+      });
+    }
     const customerRole = await Role.findOne({ name: "Customer" });
-
     if (!user) {
       user = await User.create({
         email: req.user.email,
@@ -66,8 +69,6 @@ const GoogleLogin = async (req, res) => {
 
 // function login by facebook
 const FacebookLogin = async (req, res) => {
-  if (!req.user) res.redirect("/failure");
-  console.log(req.user);
   const email = req.user.emails
     ? req.user.emails[0].value
     : "Email not provided";
@@ -79,9 +80,14 @@ const FacebookLogin = async (req, res) => {
   try {
     let user = await User.findOne({
       email: email,
-      isActive: true,
       authProvider: "facebook",
     });
+    if (user.isActive === false) {
+      return res.json({
+        success: false,
+        message: "Your account is not active",
+      });
+    }
     const customerRole = await Role.findOne({
       name: "Admin",
     });
@@ -139,6 +145,9 @@ const loginWithPassword = async(req,res) =>{
     });
     if(!user){
       return res.status(404).send({message:"User not found"});
+    }
+    if(user.isActive === false){
+      return res.status(404).send({message:"Your account is not active", success: false});
     }
     const comparePassword = await bcrypt.compare(passWord,user.passWord);
     if(!comparePassword){
