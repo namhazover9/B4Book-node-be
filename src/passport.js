@@ -18,12 +18,6 @@ passport.use(
       scope: ["email", "profile"],
     },
     function (request, accessToken, refreshToken, profile, done) {
-      if (accessToken) {
-        console.log("Access Token:", accessToken);
-      }
-      if (profile) {
-        console.log("User Profile:", profile);
-      }
       return done(null, profile);
     }
   )
@@ -39,12 +33,6 @@ passport.use(
       passReqToCallback: true,
     },
     function (req, accessToken, refreshToken, profile, done) {
-      if (accessToken) {
-        console.log("Access Token:", accessToken);
-      }
-      if (profile) {
-        console.log("User Profile:", profile);
-      }
       return done(null, profile);
     }
   )

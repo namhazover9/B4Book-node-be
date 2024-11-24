@@ -49,17 +49,71 @@ const showAllRegisterForm = async (req, res) => {
         res.status(500).send({ message: error.message });
     }
 }
-// Show all user for admin
+// Show all user and filter by role
 const showAllUser = async (req, res) => {
-    try {
-        const users = await User.find().populate({
-            path: "role", 
-            select: "name",
-        });
-        res.status(200).json(users);
-    } catch (error) {
-        res.status(500).send({ message: error.message });
+  try {
+    const { role, status, page = 1, limit = 10 } = req.query; // Default: page 1, 10 items per page
+    const skip = (page - 1) * limit; // Calculate how many documents to skip
+    
+    // check role Customer
+    if (role === "Customer") {
+      const roleDoc = await Role.findOne({ name: role });
+      const customers = await User.find({ 
+        isActive: status, 
+        role: { $elemMatch: { $eq: roleDoc._id } } 
+      })
+        .skip(skip)
+        .limit(parseInt(limit)); // Apply pagination
+      const total = await User.countDocuments({ 
+        isActive: status, 
+        role: { $elemMatch: { $eq: roleDoc._id } } 
+      }); // Total documents count
+      res.status(200).json({ 
+        total, 
+        page: parseInt(page), 
+        limit: parseInt(limit), 
+        customers 
+      });
+    } 
+
+    // check role Shop
+    else if (role === "Shop") {
+      const roleDoc = await Role.findOne({ name: role });
+      const shops = await User.find({ 
+        isActive: status, 
+        role: { $elemMatch: { $eq: roleDoc._id } } 
+      })
+        .skip(skip)
+        .limit(parseInt(limit)); // Apply pagination
+      const total = await User.countDocuments({ 
+        isActive: status, 
+        role: { $elemMatch: { $eq: roleDoc._id } } 
+      }); // Total documents count
+      res.status(200).json({ 
+        total, 
+        page: parseInt(page), 
+        limit: parseInt(limit), 
+        shops 
+      });
+    } 
+    // if user want to display all user
+    else {
+      const users = await User.find()
+        .skip(skip)
+        .limit(parseInt(limit)); // Apply pagination
+      const total = await User.countDocuments(); // Total documents count
+      res.status(200).json({ 
+        total, 
+        page: parseInt(page), 
+        limit: parseInt(limit), 
+        users 
+      });
     }
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
 };
 
-module.exports = { approvedShop, showAllRegisterForm, showAllUser };
+
+
+module.exports = { approvedShop, showAllRegisterForm, showAllUser};

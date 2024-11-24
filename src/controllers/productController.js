@@ -83,7 +83,6 @@ exports.createProduct = async (req, res) => {
       publisher,
       description,
       ISBN,
-      public_date,
       language,
       stock,
       isApproved,
@@ -101,7 +100,6 @@ exports.createProduct = async (req, res) => {
       publisher,
       description,
       ISBN,
-      public_date,
       language,
       stock,
       isApproved,
@@ -127,7 +125,6 @@ exports.updateProduct = async (req, res) => {
       publisher,
       description,
       ISBN,
-      public_date,
       language,
       stock,
       isApproved,
@@ -149,7 +146,6 @@ exports.updateProduct = async (req, res) => {
     product.publisher = publisher || product.publisher;
     product.description = description || product.description;
     product.ISBN = ISBN || product.ISBN;
-    product.public_date = public_date || product.public_date;
     product.language = language || product.language;
     product.stock = stock || product.stock;
     product.isApproved = isApproved || product.isApproved;
@@ -233,3 +229,67 @@ exports.showRating = async (req, res) => {
     
   }
 }
+
+exports.filterProduct = async (req, res) => {
+  try {
+    const { category, minPrice, maxPrice, author, page = 1, limit = 10 } = req.query;
+
+    // Tạo điều kiện lọc (query)
+    const query = {};
+    if (category) query.category = { $in: category.split(",") }; // Lọc nhiều category
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = parseFloat(minPrice); // Lớn hơn hoặc bằng minPrice
+      if (maxPrice) query.price.$lte = parseFloat(maxPrice); // Nhỏ hơn hoặc bằng maxPrice
+    }
+    if (author) query.author = { $in: author.split(",") }; // Lọc nhiều author
+
+    // Chuyển đổi page và limit thành số nguyên
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    // Truy vấn danh sách sản phẩm dựa trên điều kiện
+    const products = await Product.find(query)
+      .skip((pageNumber - 1) * limitNumber) // Bỏ qua các sản phẩm của trang trước đó
+      .limit(limitNumber); // Giới hạn số lượng sản phẩm trả về
+
+    // Đếm tổng số sản phẩm phù hợp
+    const total = await Product.countDocuments(query);
+
+    // Trả về kết quả
+    res.status(200).json({
+      data: products,
+      currentPage: pageNumber,
+      totalPages: Math.ceil(total / limitNumber), // Tính tổng số trang
+      totalItems: total, // Tổng số sản phẩm
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message }); // Xử lý lỗi
+  }
+};
+
+exports.searchProduct = async (req, res) => {
+  try {
+    const { keyword } = req.query;
+
+    // Kiểm tra nếu keyword không tồn tại hoặc không phải là chuỗi
+    if (!keyword || typeof keyword !== "string") {
+      return res.status(400).json({ message: "Keyword must be a non-empty string" });
+    }
+
+    // Tìm kiếm sản phẩm
+    const products = await Product.find({
+      $or: [
+        { title: { $regex: keyword, $options: "i" } },
+        { author: { $regex: keyword, $options: "i" } },
+      ],
+    });
+
+    // Trả về danh sách sản phẩm
+    res.status(200).json(products);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+

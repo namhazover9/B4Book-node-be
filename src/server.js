@@ -17,6 +17,7 @@ const adminRoute = require("./routes/adminRoute");
 const shoppingCartRoute = require("./routes/shoppingCartRoute");
 const orderRoute = require("./routes/orderRoute");
 const corsConfig = require("./configs/cors.config");
+const shopRoute = require("./routes/shopRoute");
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -50,6 +51,7 @@ app.use("/cart", shoppingCartRoute);
 app.use("/order", orderRoute);
 app.use("/", userRoute);
 app.use("/admin", adminRoute);
+app.use("/shop", shopRoute);
 
 // Start server
 app.listen(port, () => {
