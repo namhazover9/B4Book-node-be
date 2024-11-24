@@ -9,6 +9,7 @@ const bodyParser = require("body-parser");
 const path = require("path");
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger.json');
+const cookieParser = require('cookie-parser');
 
 // Routes
 const productRoute = require("./routes/productRoute");
@@ -18,9 +19,14 @@ const shoppingCartRoute = require("./routes/shoppingCartRoute");
 const orderRoute = require("./routes/orderRoute");
 const corsConfig = require("./configs/cors.config");
 const shopRoute = require("./routes/shopRoute");
+const loginApi = require("./routes/loginRoute");
+const userApi = require('./routes/user.api');
+const accountApi = require('./routes/account.api');
 
 const app = express();
 const port = process.env.PORT || 8000;
+
+app.use(cookieParser());
 
 // Middleware
 app.use(cors(corsConfig));
@@ -35,6 +41,11 @@ app.use(session({
   saveUninitialized: true,
   cookie: { secure: false }, 
 }));
+
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  next();
+});
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -52,6 +63,9 @@ app.use("/order", orderRoute);
 app.use("/", userRoute);
 app.use("/admin", adminRoute);
 app.use("/shop", shopRoute);
+app.use('/login', loginApi);
+app.use('/user', userApi);
+app.use('/account', accountApi);
 
 // Start server
 app.listen(port, () => {
