@@ -49,6 +49,7 @@ const showAllRegisterForm = async (req, res) => {
         res.status(500).send({ message: error.message });
     }
 }
+
 // Show all user and filter by role
 const showAllUser = async (req, res) => {
   try {

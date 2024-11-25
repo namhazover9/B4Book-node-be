@@ -258,21 +258,98 @@ exports.showRating = async (req, res) => {
 
 exports.updateFeedbacks = async (req, res) => {
   try {
-    const productId = req.params.id; 
+    const productId = req.params.id; // Lấy ID của sản phẩm từ params
+    const { feedbackId, newFeedback } = req.body; // Lấy ID của feedback và dữ liệu feedback mới từ body
+
+    // Tìm sản phẩm
     const product = await Product.findById(productId);
 
-    // check if product not found
+    // Kiểm tra nếu sản phẩm không tồn tại
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
-    const feedbacks = product.feedBacks._id;
-    
-    }catch(error){
+
+    // Tìm feedback cần cập nhật
+    const feedback = product.feedBacks.id(feedbackId);
+    console.log(feedback)
+    // Kiểm tra nếu feedback không tồn tại
+    if (!feedback) {
+      return res.status(404).json({ message: "Feedback not found" });
+    }
+
+    // Cập nhật nội dung feedback
+    feedback.comment = newFeedback; // Thay đổi giá trị tùy thuộc vào cấu trúc feedback của bạn
+
+    // Lưu sản phẩm sau khi cập nhật
+    await product.save();
+
+    // Trả về phản hồi thành công
+    return res.status(200).json({ message: "Feedback updated successfully", feedback });
+  } catch (error) {
+    // Xử lý lỗi
+    res.status(500).json({
+      message: "Error updating feedback",
+      error: error.message,
+    });
+  }
+};
+
+exports.showAllFeedbacks = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const product = await Product.findById(productId);
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    if (product.feedBacks.length === 0) {
+      return res.status(200).json({
+        message: "No feedbacks available for this product",
+        feedbacks: [],
+      });
+    }
+
+    res.status(200).json({
+      message: "Feedbacks retrieved successfully",
+      feedbacks: product.feedBacks,
+    })
+    }
+    catch (error) {
       res.status(500).json({
-        message: "Error updating ratting",
+        message: "Error retrieving feedbacks",
         error: error.message,
       });
     }
+}
+
+exports.deleteFeedback = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const feedbackId = req.params.feedbackId;
+
+    // Tìm kế tập feedback
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Tìm kế tập feedback
+    const feedback = product.feedBacks.id(feedbackId);
+    if (!feedback) {
+      return res.status(404).json({ message: "Feedback not found" });
+    }
+
+    // Xóa feedback
+    product.feedBacks.remove(feedbackId);
+
+    // Lưu sản phẩm sau khi xóa feedback
+    await product.save();
+
+    res.status(200).json({ message: "Feedback deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 }
 
 exports.filterProduct = async (req, res) => {
