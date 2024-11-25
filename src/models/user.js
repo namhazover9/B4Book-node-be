@@ -37,20 +37,20 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-userSchema.pre('save', async function (next) {
-  try {
-    if (this.authType === 'local') {
-      const saltRounds = parseInt(process.env.SALT_ROUND);
-      //hashing password...
-      const hashPassword = await bcrypt.hash(this.password, saltRounds);
-      this.password = hashPassword;
-      next();
-    }
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
+// userSchema.pre('save', async function (next) {
+//   try {
+//     if (this.authType === 'local') {
+//       const saltRounds = parseInt(process.env.SALT_ROUND);
+//       //hashing password...
+//       const hashPassword = await bcrypt.hash(this.password, saltRounds);
+//       this.password = hashPassword;
+//       next();
+//     }
+//     next();
+//   } catch (error) {
+//     next(error);
+//   }
+// });
 
 
 const User = mongoose.model("User", userSchema);
