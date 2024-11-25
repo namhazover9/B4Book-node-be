@@ -1,7 +1,7 @@
 const Product = require("../models/product");
 // const Category = require("../models/category");
 const cloudinary = require("../utils/cloudinary");
-
+const ExcelJS = require('exceljs');
 exports.uploadImages = async (req, res) => {
   try {
     const files = req.files; // Các file từ Multer
@@ -447,6 +447,59 @@ exports.searchProduct = async (req, res) => {
   }
 };
 
+exports.exportFileProduct = async (req, res) => {
+  try {
+    // Lấy tất cả sản phẩm từ cơ sở dữ liệu
+    const products = await Product.find({});
+
+    // Nếu không có sản phẩm nào, trả về lỗi
+    if (products.length === 0) {
+      return res.status(404).json({ message: "No products found" });
+    }
+
+    // Tạo workbook và worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Products');
+
+    // Đặt tiêu đề cho các cột
+    worksheet.columns = [
+      { header: 'Title', key: 'title', width: 30 },
+      { header: 'Description', key: 'description', width: 50 },
+      { header: 'Price', key: 'price', width: 15 },
+      { header: 'Author', key: 'author', width: 20 },
+      { header: 'Category', key: 'category', width: 30 },
+      { header: 'Stock', key: 'stock', width: 10 },
+      { header: 'Sales Number', key: 'salesNumber', width: 15 },
+      { header: 'Created At', key: 'createdAt', width: 20 }
+    ];
+
+    // Thêm dữ liệu sản phẩm vào worksheet
+    products.forEach(product => {
+      worksheet.addRow({
+        title: product.title,
+        description: product.description,
+        price: product.price,
+        author: product.author,
+        category: product.category.join(", "), // Giả sử category là mảng
+        stock: product.stock,
+        salesNumber: product.salesNumber,
+        createdAt: product.createdAt.toISOString() // Đảm bảo thời gian đúng định dạng
+      });
+    });
+
+    // Đặt header cho response là Excel
+    res.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.header('Content-Disposition', 'attachment; filename=products.xlsx');
+
+    // Gửi file Excel cho client
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (error) {
+    // Xử lý lỗi
+    res.status(500).json({ message: error.message });
+  }
+};
 
 
 
