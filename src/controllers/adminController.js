@@ -1,6 +1,7 @@
 const Role = require("../models/role");
 const Shop = require("../models/shop");
 const User = require("../models/user");
+
 // function approve register form become a seller from user
 const approvedShop = async (req, res) => {
     try {
