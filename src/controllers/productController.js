@@ -230,6 +230,7 @@ exports.showRating = async (req, res) => {
   }
 }
 
+// filter product function
 exports.filterProduct = async (req, res) => {
   try {
     const { category, minPrice, maxPrice, author, page = 1, limit = 10 } = req.query;
@@ -243,7 +244,6 @@ exports.filterProduct = async (req, res) => {
       if (maxPrice) query.price.$lte = parseFloat(maxPrice); // Nhỏ hơn hoặc bằng maxPrice
     }
     if (author) query.author = { $in: author.split(",") }; // Lọc nhiều author
-
     // Chuyển đổi page và limit thành số nguyên
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
@@ -291,5 +291,7 @@ exports.searchProduct = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
 
 

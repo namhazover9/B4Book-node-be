@@ -1,6 +1,7 @@
 const Role = require("../models/role");
 const Shop = require("../models/shop");
 const User = require("../models/user");
+
 // function approve register form become a seller from user
 const approvedShop = async (req, res) => {
     try {
@@ -49,6 +50,7 @@ const showAllRegisterForm = async (req, res) => {
         res.status(500).send({ message: error.message });
     }
 }
+
 // Show all user and filter by role
 const showAllUser = async (req, res) => {
   try {
