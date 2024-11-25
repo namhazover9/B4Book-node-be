@@ -186,24 +186,19 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
-exports.ratingProduct = async (req, res) => {
+exports.feebackProduct = async (req, res) => {
   try {
-    const { ratting } = req.body; 
+    const { rating, comment } = req.body; 
     const productId = req.params.id; 
-
-    
-    const product = await Product.findByIdAndUpdate(
-      productId,
-      {
-        $inc: { numberOfRating: 1, rating: ratting }, 
-      },
-      { new: true } 
-    );
+    const user = req.user._id;
+    const product = await Product.findByIdAndUpdate(productId, { $inc: { numberOfRating: 1} }, { new: true });
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
+    product.feedBacks.push({ userId: user, rating: rating, comment: comment });
+    await product.save();
     res.status(200).json({
       message: "Ratting updated successfully",
       product,
@@ -220,53 +215,213 @@ exports.showRating = async (req, res) => {
   try {
     const productId = req.params.id; 
     const product = await Product.findById(productId);
-    const resultRating = product.rating / product.numberOfRating;
+
+    // check if product not found
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
-    res.json(resultRating);
+
+    // check if product has no feedback
+    if (product.feedBacks.length === 0) {
+      return res.status(200).json({
+        message: "No ratings available yet for this product",
+        averageRating: 0,
+      });
+    }
+
+    // filter product feedback (rating not null)
+    const validFeedbacks = product.feedBacks.filter((fb) => fb.rating !== null && fb.rating !== undefined);
+
+    // if product has no valid feedback
+    if (validFeedbacks.length === 0) {
+      return res.status(200).json({
+        message: "No valid ratings available for this product",
+        averageRating: 0,
+      });
+    }
+
+    // calculate average ratingResult
+    const totalRating = validFeedbacks.reduce((acc, cur) => acc + cur.rating, 0);
+    product.ratingResult = totalRating / validFeedbacks.length;
+
+    res.status(200).json({
+      message: "Rating calculated successfully",
+      total: product.ratingResult,
+    });
   } catch (error) {
-    
+    res.status(500).json({
+      message: "Error retrieving product rating",
+      error: error.message,
+    });
+  }
+};
+
+exports.updateFeedbacks = async (req, res) => {
+  try {
+    const productId = req.params.id; // Lấy ID của sản phẩm từ params
+    const { feedbackId, newFeedback } = req.body; // Lấy ID của feedback và dữ liệu feedback mới từ body
+
+    // Tìm sản phẩm
+    const product = await Product.findById(productId);
+
+    // Kiểm tra nếu sản phẩm không tồn tại
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Tìm feedback cần cập nhật
+    const feedback = product.feedBacks.id(feedbackId);
+    console.log(feedback)
+    // Kiểm tra nếu feedback không tồn tại
+    if (!feedback) {
+      return res.status(404).json({ message: "Feedback not found" });
+    }
+
+    // Cập nhật nội dung feedback
+    feedback.comment = newFeedback; // Thay đổi giá trị tùy thuộc vào cấu trúc feedback của bạn
+
+    // Lưu sản phẩm sau khi cập nhật
+    await product.save();
+
+    // Trả về phản hồi thành công
+    return res.status(200).json({ message: "Feedback updated successfully", feedback });
+  } catch (error) {
+    // Xử lý lỗi
+    res.status(500).json({
+      message: "Error updating feedback",
+      error: error.message,
+    });
+  }
+};
+
+exports.showAllFeedbacks = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const product = await Product.findById(productId);
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    if (product.feedBacks.length === 0) {
+      return res.status(200).json({
+        message: "No feedbacks available for this product",
+        feedbacks: [],
+      });
+    }
+
+    res.status(200).json({
+      message: "Feedbacks retrieved successfully",
+      feedbacks: product.feedBacks,
+    })
+    }
+    catch (error) {
+      res.status(500).json({
+        message: "Error retrieving feedbacks",
+        error: error.message,
+      });
+    }
+}
+
+exports.deleteFeedback = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const feedbackId = req.params.feedbackId;
+
+    // Tìm kế tập feedback
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Tìm kế tập feedback
+    const feedback = product.feedBacks.id(feedbackId);
+    if (!feedback) {
+      return res.status(404).json({ message: "Feedback not found" });
+    }
+
+    // Xóa feedback
+    product.feedBacks.remove(feedbackId);
+
+    // Lưu sản phẩm sau khi xóa feedback
+    await product.save();
+
+    res.status(200).json({ message: "Feedback deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 }
 
 // filter product function
 exports.filterProduct = async (req, res) => {
   try {
-    const { category, minPrice, maxPrice, author, page = 1, limit = 10 } = req.query;
+    // Lấy các tham số từ query string
+    const { category, minPrice, maxPrice, author, page = 1, limit = 10, sort } = req.query;
 
-    // Tạo điều kiện lọc (query)
+    // Tạo đối tượng điều kiện (query) cho việc tìm kiếm
     const query = {};
-    if (category) query.category = { $in: category.split(",") }; // Lọc nhiều category
+
+    // Lọc theo category nếu có
+    if (category) query.category = { $in: category.split(",") }; // Lọc nhiều category, chuyển thành mảng
+
+    // Lọc theo giá nếu có minPrice hoặc maxPrice
     if (minPrice || maxPrice) {
       query.price = {};
       if (minPrice) query.price.$gte = parseFloat(minPrice); // Lớn hơn hoặc bằng minPrice
       if (maxPrice) query.price.$lte = parseFloat(maxPrice); // Nhỏ hơn hoặc bằng maxPrice
     }
-    if (author) query.author = { $in: author.split(",") }; // Lọc nhiều author
-    // Chuyển đổi page và limit thành số nguyên
+
+    // Lọc theo tác giả (author) nếu có
+    if (author) query.author = { $in: author.split(",") }; // Lọc nhiều author, chuyển thành mảng
+
+    // Chuyển đổi page và limit thành số nguyên (đảm bảo giá trị hợp lệ)
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
 
-    // Truy vấn danh sách sản phẩm dựa trên điều kiện
+    // Xác định thứ tự sắp xếp (sort)
+    let sortOptions = {};
+    switch (sort) {
+      case "popularity":
+        sortOptions = { countClick: -1 }; // Sắp xếp theo độ phổ biến giảm dần
+        break;
+      case "averageRating":
+        sortOptions = { ratingResult: -1 }; // Sắp xếp theo đánh giá trung bình giảm dần
+        break;
+      case "latest":
+        sortOptions = { createdAt: -1 }; // Sắp xếp theo ngày tạo mới nhất
+        break;
+      case "priceLowToHigh":
+        sortOptions = { price: 1 }; // Giá từ thấp đến cao
+        break;
+      case "priceHighToLow":
+        sortOptions = { price: -1 }; // Giá từ cao đến thấp
+        break;
+      default:
+        sortOptions = {}; // Không sắp xếp nếu không có tham số `sort`
+        break;
+    }
+
+    // Truy vấn danh sách sản phẩm theo điều kiện lọc và sắp xếp
     const products = await Product.find(query)
-      .skip((pageNumber - 1) * limitNumber) // Bỏ qua các sản phẩm của trang trước đó
+      .sort(sortOptions) // Áp dụng sắp xếp
+      .skip((pageNumber - 1) * limitNumber) // Bỏ qua các sản phẩm của các trang trước
       .limit(limitNumber); // Giới hạn số lượng sản phẩm trả về
 
-    // Đếm tổng số sản phẩm phù hợp
+    // Đếm tổng số sản phẩm phù hợp với các điều kiện lọc
     const total = await Product.countDocuments(query);
 
     // Trả về kết quả
     res.status(200).json({
       data: products,
-      currentPage: pageNumber,
-      totalPages: Math.ceil(total / limitNumber), // Tính tổng số trang
+      currentPage: pageNumber, // Trang hiện tại
+      totalPages: Math.ceil(total / limitNumber), // Tổng số trang
       totalItems: total, // Tổng số sản phẩm
     });
   } catch (error) {
     res.status(500).json({ message: error.message }); // Xử lý lỗi
   }
 };
+
 
 exports.searchProduct = async (req, res) => {
   try {
