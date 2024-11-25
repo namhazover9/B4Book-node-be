@@ -112,7 +112,7 @@ async@^3.2.3:
 "b4book-node-be@file:.":
   version "1.0.0"
   dependencies:
-    b4book-node-be "file:../../../Library/Caches/Yarn/v6/npm-b4book-node-be-1.0.0-aabc2dd4-3033-41ed-a0ae-3ee77426b99a-1732462442963/node_modules/b4book-node-be"
+    b4book-node-be "file:../../../Library/Caches/Yarn/v6/npm-b4book-node-be-1.0.0-e9878e91-d429-4aa0-aca2-11544045013c-1732511236825/node_modules/b4book-node-be"
     bcrypt "^5.1.1"
     bcryptjs "^2.4.3"
     body-parser "^1.20.3"

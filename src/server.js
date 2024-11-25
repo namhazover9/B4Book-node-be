@@ -3,7 +3,6 @@ const dotenv = require("dotenv");
 const connectDb = require("./database/database");
 dotenv.config();
 const cors = require("cors");
-const passport = require("passport");
 const session = require("express-session");
 const bodyParser = require("body-parser");
 const path = require("path");
@@ -46,9 +45,6 @@ app.use((req, res, next) => {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   next();
 });
-
-app.use(passport.initialize());
-app.use(passport.session());
 
 app.set("views", path.join(__dirname, "./src/views"));
 app.set("view engine", "ejs");

@@ -1,4 +1,4 @@
-const passport = require("passport");
+const passport = require('passport');
 const jwt = require('jsonwebtoken');
 const GoogleStrategy = require('passport-google-token').Strategy;
 const FacebookStrategy = require("passport-facebook").Strategy;
