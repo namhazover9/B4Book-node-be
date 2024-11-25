@@ -1,6 +1,5 @@
-const AccountModel = require('../models/account.models/account.model');
-const VerifyModel = require('../models/account.models/verify.model');
-const UserModel = require('../models/account.models/user.model');
+const UserModel = require('../models/user');
+const VerifyModel = require('../models/verify.model');
 const mailConfig = require('../configs/mail.config');
 const helper = require('../helpers');
 const constants = require('../constants');
@@ -11,7 +10,7 @@ const postSendVerifyCode = async (req, res) => {
   try {
     const { email } = req.body;
     //Kiểm tra tài khoản đã tồn tại hay chưa
-    const account = await AccountModel.findOne({ email });
+    const account = await UserModel.findOne({ email });
 
     //nếu tồn tại, thông báo lỗi, return
     if (account) {
@@ -68,7 +67,7 @@ const postSignUp = async (req, res, next) => {
     } = req.body.account;
 
     //Kiểm tra tài khoản đã tồn tại hay chưa
-    const account = await AccountModel.findOne({ email });
+    const account = await UserModel.findOne({ email });
 
     //nếu tồn tại, thông báo lỗi, return
     if (account) {
@@ -88,7 +87,7 @@ const postSignUp = async (req, res, next) => {
     }
 
     // Tạo tạo tài khoản và user tương ứng
-    const newAcc = await AccountModel.create({
+    const newAcc = await UserModel.create({
       email,
       password,
       authType: 'local',
@@ -118,7 +117,7 @@ const postSendCodeForgotPW = async (req, res, next) => {
   try {
     const { email } = req.body;
     //Kiểm tra tài khoản đã tồn tại hay chưa
-    const account = await AccountModel.findOne({ email });
+    const account = await UserModel.findOne({ email });
 
     //nếu tồn tại, thông báo lỗi, return
     if (!account)
@@ -172,7 +171,7 @@ const postResetPassword = async (req, res, next) => {
       parseInt(process.env.SALT_ROUND),
     );
 
-    const response = await AccountModel.updateOne(
+    const response = await UserModel.updateOne(
       { email, authType: 'local' },
       { password: hashPassword },
     );
