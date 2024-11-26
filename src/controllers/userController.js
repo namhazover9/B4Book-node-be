@@ -121,7 +121,7 @@ const addPassword = async (req, res) => {
   const { passWord } = req.body;
   try {
     const hash = await bcrypt.hash(passWord, 10);
-    const user = await User.findByIdAndUpdate(req.user._id,{
+    const user = await User.findByIdAndUpdate(req.headers['id'],{
       passWord:hash},
       { new: true });
     if (!user) {
@@ -224,35 +224,35 @@ const forgotPassword = async (req, res) => {
 };
 
 // render home page and verify token
-const verifyToken = (req, res) => {
-  try {
-    const { verifyToken } = req.body;
+// const verifyToken = (req, res) => {
+//   try {
+//     const { verifyToken } = req.body;
     
-    if (verifyToken) {
+//     if (verifyToken) {
 
-      const verify = jwt.verify(verifyToken, process.env.Activation_sec);
-      if (!verify) {
-        return res.status(404).send({ message: "Token not valid" });
-      }
-      const token = jwt.sign({ _id: verify.user._id }, process.env.Jwt_sec, {
-        expiresIn: "5d",
-      });
+//       const verify = jwt.verify(verifyToken, process.env.Activation_sec);
+//       if (!verify) {
+//         return res.status(404).send({ message: "Token not valid" });
+//       }
+//       const token = jwt.sign({ _id: verify.user._id }, process.env.Jwt_sec, {
+//         expiresIn: "5d",
+//       });
       
-      return res.json({
-        success: true,
-        message: "verify success",
-        token,
-      });
-    }
-  } catch (error) {
-    res.status(500).send({ message: error.message });
-  }
-};
+//       return res.json({
+//         success: true,
+//         message: "verify success",
+//         token,
+//       });
+//     }
+//   } catch (error) {
+//     res.status(500).send({ message: error.message });
+//   }
+// };
 
 // show profile for user
 const showProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.headers['id']);
     res.json(user);
   } catch (error) {}
 };
@@ -277,7 +277,7 @@ const registerShop = async (req, res) => {
             avartar:avartar,
             isActive: false,
             isApproved: false,
-            user: req.user._id
+            user: req.headers['id']
         });
         res.status(200).json(respone);
     } catch (error) {
@@ -296,7 +296,7 @@ const addWishlistProduct = async (req, res) => {
     }
 
     // find user by 
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.headers['id']);
     // check user if user not found
     if (!user) {
       return res.status(404).send({ message: "User not found" });
@@ -335,7 +335,7 @@ const deleteWishlistProduct = async (req, res) => {
     }
     const wishlistProduct = await WishlistProduct.findOneAndDelete({
       product: product._id,
-      user: req.user._id,
+      user: req.headers['id'],
     })
     
     // check if wishlist not found
@@ -394,7 +394,6 @@ const updateProfileUser = async (req, res) => {
 
 module.exports = {
   loadAuth,
-  verifyToken,
   showProfile,
   registerShop,
   addPassword,

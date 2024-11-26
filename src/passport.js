@@ -1,6 +1,6 @@
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
-const GoogleStrategy = require('passport-google-token').Strategy;
+const GoogleStrategy = require("passport-google-token").Strategy;
 const FacebookStrategy = require("passport-facebook-token");
 const User = require('./models/user');
 const Role = require('./models/role');
@@ -47,7 +47,7 @@ passport.use(
             googleId: id,
             lastLogin: Date.now(),
             isActive: true,
-            avatar: req.user.photos ? req.user.photos[0].value : '', 
+            avatar: profile.photos && profile.photos.length > 0 ? profile.photos[0].value : '',
             role: [defaultRole._id], // Gán ObjectId của vai trò vào trường role
           });
 
