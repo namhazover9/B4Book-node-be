@@ -19,11 +19,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
-    authType: {
+    authType:[ {
       type: String,
       enum: ['local', 'google'],
       default: 'local',
-    },
+    },],
     failedLoginTimes: {
       type: Number,
       default: 0,
