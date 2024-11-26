@@ -6,7 +6,7 @@ const Cart = require('../models/shoppingCart');
 exports.getCartForOrder = async (req, res) => {
   try {
     // Tìm giỏ hàng của người dùng hiện tại
-    const cart = await Cart.findOne({ user: req.user._id }).populate('cartItems.product');
+    const cart = await Cart.findOne({ user: req.headers['id'] }).populate('cartItems.product');
 
     if (!cart || cart.cartItems.length === 0) {
       return res.status(404).json({
@@ -73,7 +73,7 @@ exports.createOrder = async (req, res) => {
     let totalOrderPrice = 0;
 
     const orderData = {
-      customer: req.user._id, // ID của khách hàng hiện tại
+      customer: req.headers['id'], // ID của khách hàng hiện tại
       shops: [],
       shippingAddress,
       paymentMethod,

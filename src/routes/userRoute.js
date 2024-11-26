@@ -55,7 +55,6 @@ router.get("/", userController.loadAuth);
 
 
 router.get("/Userprofile", isAuth, userController.showProfile);
-router.post("/verify", userController.verifyToken);
 router.post("/registerShop",isAuth, userController.registerShop);
 router.post("/sendVerify", userController.sendVerifyCode);
 // router.post("/login", userController.loginWithPassword);

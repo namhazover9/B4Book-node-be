@@ -7,7 +7,7 @@ const createVoucher = async (req, res) => {
 
   try {
     // find shop base on user._id
-    const shop = await Shop.findOne({ user: req.user._id });
+    const shop = await Shop.findOne({ user: req.headers['id']});
     // create current date to compare with valid date and expired date
     const currentDate = new Date().setHours(0, 0, 0, 0);
   

@@ -72,6 +72,14 @@ exports.getProductById = async (req, res) => {
   }
 };
 
+exports.getProductByShop = async (req, res) => {
+  try {
+    const products = await Product.find({ shopId: req.params.id });
+    res.json(products);
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+};
 
 exports.createProduct = async (req, res) => {
   try {
@@ -190,7 +198,7 @@ exports.feebackProduct = async (req, res) => {
   try {
     const { rating, comment } = req.body; 
     const productId = req.params.id; 
-    const user = req.user._id;
+    const user = req.headers['id'];
     const product = await Product.findByIdAndUpdate(productId, { $inc: { numberOfRating: 1} }, { new: true });
 
     if (!product) {

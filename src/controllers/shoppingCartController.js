@@ -89,12 +89,12 @@ exports.addProductToCart = async (req, res) => {
 // @access  Private/User
 exports.getLoggedUserCart = async (req, res) => {
     try {
-        const cart = await Cart.findOne({ user: req.user._id });
-        console.log("cart", req.user._id);
+        const cart = await Cart.findOne({ user: req.headers['id']});
+        console.log("cart", req.headers['id']);
         if (!cart) {
         return res.status(404).json({
             status: 'error',
-            message: `There is no cart for this user id: ${req.user._id}`,
+            message: `There is no cart for this user id: ${req.headers['id']}`,
         });
         }
 
@@ -114,7 +114,7 @@ exports.getLoggedUserCart = async (req, res) => {
 exports.removeSpecificCartItem = async (req, res) => {
     try {
         const cart = await Cart.findOneAndUpdate(
-            { user: req.user._id },
+            { user: req.headers['id']},
             { $pull: { cartItems: { _id: req.params.itemId } } },
             { new: true }
         );
@@ -144,7 +144,7 @@ exports.removeSpecificCartItem = async (req, res) => {
 // @access  Private/User
 exports.clearCart = async (req, res) => {
     try {
-        await Cart.findOneAndDelete({ user: req.user._id });
+        await Cart.findOneAndDelete({ user: req.headers['id'] });
         res.status(204).send();
     } catch (error) {
         res.status(500).json({ status: 'error', message: error.message });
@@ -158,11 +158,11 @@ exports.updateCartItemQuantity = async (req, res) => {
     try {
         const { quantity } = req.body;
 
-        const cart = await Cart.findOne({ user: req.user._id });
+        const cart = await Cart.findOne({ user: req.headers['id']});
         if (!cart) {
             return res.status(404).json({
                 status: 'error',
-                message: `There is no cart for user ${req.user._id}`,
+                message: `There is no cart for user ${req.headers['id']}`,
             });
         }
 
