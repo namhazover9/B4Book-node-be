@@ -16,7 +16,7 @@ const sendMail = async (email, subject, newPass) => {
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Your new Password</title>
+      <title>Your verify code</title>
       <style>
           body{
               font-family: Arial, san-serif;
@@ -50,7 +50,7 @@ const sendMail = async (email, subject, newPass) => {
     <body>
      <div class="container">
       <h1>New Password</h1>
-      <p>Hello ${email} your new password for your account is:</p>
+      <p>Hello ${email} your verify code for reset password is:</p>
       <p class="Password">${newPass}</p>
      </div>
     </body>
