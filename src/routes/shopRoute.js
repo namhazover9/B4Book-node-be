@@ -10,6 +10,7 @@ router.get("/getAllVoucher", shop.getAllVoucher);
 router.put("/activeorDeactiveVoucher", shop.activeOrDeactiveVoucher);
 router.put("/deleteVoucher/:id",isShop, shop.deleteVoucher);
 router.put("/updateVoucher/:id",isShop, shop.updateVoucher);
+router.get("/", shop.getAllShop);
 router.get("/:id", shop.getValueVoucher);
 
 module.exports = router;
