@@ -26,7 +26,7 @@ passport.use(
         const email = emails[0].value;
 
         // Kiểm tra người dùng đã tồn tại hay chưa
-        let user = await User.findOne({ googleId: id, authType: 'google' });
+        let user = await User.findOne({ googleId: id, authProvider: 'google' });
 
         if (!user) {
           // Tìm vai trò mặc định 'user' trong cơ sở dữ liệu
@@ -43,7 +43,6 @@ passport.use(
             lastLogin: new Date(),
             isActive: true,
             authProvider: 'google',
-            authType: 'google',
             googleId: id,
             lastLogin: Date.now(),
             isActive: true,
@@ -80,7 +79,7 @@ passport.use(
         const email = emails[0].value;
 
         // Kiểm tra người dùng đã tồn tại hay chưa
-        let user = await User.findOne({ facebookId: id, authType: 'facebook' });
+        let user = await User.findOne({ facebookId: id, authProvider: 'facebook' });
 
         if (!user) {
           // Tìm vai trò mặc định 'user' trong cơ sở dữ liệu
@@ -97,7 +96,6 @@ passport.use(
             lastLogin: new Date(),
             isActive: true,
             authProvider: 'facebook',
-            authType: 'facebook',
             googleId: id,
             lastLogin: Date.now(),
             isActive: true,

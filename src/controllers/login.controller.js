@@ -10,13 +10,13 @@ const express = require('express');
 const postLogin = async (req, res, next) => {
   try {
     const { email, password, keepLogin } = req.body.account;
-
+    
     // kiểm tra tài khoản có tồn tại không?
-    const account = await User.findOne({ email, authType: 'local' });
+    const account = await User.findOne({ email, authProvider: 'google' });
     if (!account) {
       return res.status(406).json({ message: 'Tài khoản không tồn tại !' });
     }
-
+        
     /*
       Kiểm tra số lần đăng nhập
      tránh trường hợp user reload trang để
@@ -30,8 +30,8 @@ const postLogin = async (req, res, next) => {
     }
 
     // kiểm tra password
-    const isMatch = await bcrypt.compare(password, account.password);
-
+    const isMatch = await bcrypt.compare(password, account.passWord);
+    
     // ! sai mật khẩu -> thất bại
     if (!isMatch) {
       // tăng số lần đăng nhập thất bại
@@ -108,11 +108,6 @@ const postLoginWithGoogle = async (req, res, next) => {
     // user from middleware passport
     const { user } = req;
 
-    // nếu user có type = local thì báo lỗi
-    if (user.authType === 'local') {
-      return res.status(401).json({ message: 'Email đã được đăng ký.' });
-    }
-
     // tạo refresh token
     const refreshToken = await jwtConfig.encodedToken(
       process.env.REFRESH_TOKEN,
@@ -148,12 +143,7 @@ const postLoginWithFacebook = async (req, res, next) => {
   try {
     // user from middleware passport
     const { user } = req;
-
-    // nếu user có type = local thì báo lỗi
-    if (user.authType === 'local') {
-      return res.status(401).json({ message: 'Email đã được đăng ký.' });
-    }
-
+    
     // tạo refresh token
     const refreshToken = await jwtConfig.encodedToken(
       process.env.REFRESH_TOKEN,
