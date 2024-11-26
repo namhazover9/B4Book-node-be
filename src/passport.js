@@ -1,7 +1,7 @@
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
 const GoogleStrategy = require('passport-google-token').Strategy;
-const FacebookStrategy = require("passport-facebook").Strategy;
+const FacebookStrategy = require("passport-facebook-token");
 const User = require('./models/user');
 const Role = require('./models/role');
 
@@ -12,6 +12,7 @@ passport.serializeUser((user, done) => {
 passport.deserializeUser(function (user, done) {
   done(null, user);
 });
+
 
 passport.use(
   new GoogleStrategy(
@@ -68,14 +69,14 @@ passport.use(
     {
       clientID: process.env.CLIENT_ID_FB, // Your Credentials here.
       clientSecret: process.env.CLIENT_SECRET_FB, // Your Credentials here.
-      callbackURL: "/facebook/callback",
-      profileFields: ["id", "displayName", "photos", "email"],
-      passReqToCallback: true,
+      fbGraphVersion: 'v3.0'
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        const { id, name, emails } = profile;
-        const { userName } = name;
+        const { id, familyName, givenName, emails } = profile;
+
+        const displayName  = familyName + ' ' + givenName;
+       
         const email = emails[0].value;
 
         // Kiểm tra người dùng đã tồn tại hay chưa
@@ -92,14 +93,14 @@ passport.use(
           // Tạo người dùng mới
           user = new User({
             email,
-            userName: userName,
+            userName: displayName,
             lastLogin: new Date(),
             isActive: true,
             authProvider: 'facebook',
             googleId: id,
             lastLogin: Date.now(),
             isActive: true,
-            avatar: req.user.photos ? req.user.photos[0].value : '', 
+           
             role: [defaultRole._id], // Gán ObjectId của vai trò vào trường role
           });
 
