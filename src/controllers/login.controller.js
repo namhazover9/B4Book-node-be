@@ -10,13 +10,13 @@ const express = require('express');
 const postLogin = async (req, res, next) => {
   try {
     const { email, password, keepLogin } = req.body.account;
-
+    
     // kiểm tra tài khoản có tồn tại không?
     const account = await User.findOne({ email, authType: 'local' });
     if (!account) {
       return res.status(406).json({ message: 'Tài khoản không tồn tại !' });
     }
-
+        
     /*
       Kiểm tra số lần đăng nhập
      tránh trường hợp user reload trang để
@@ -30,8 +30,8 @@ const postLogin = async (req, res, next) => {
     }
 
     // kiểm tra password
-    const isMatch = await bcrypt.compare(password, account.password);
-
+    const isMatch = await bcrypt.compare(password, account.passWord);
+    
     // ! sai mật khẩu -> thất bại
     if (!isMatch) {
       // tăng số lần đăng nhập thất bại
