@@ -57,6 +57,7 @@ router.get("/", userController.loadAuth);
 router.get("/Userprofile", isAuth, userController.showProfile);
 router.post("/verify", userController.verifyToken);
 router.post("/registerShop",isAuth, userController.registerShop);
+router.post("/sendVerify", userController.sendVerifyCode);
 // router.post("/login", userController.loginWithPassword);
 router.put("/addPassword",isAuth, userController.addPassword);
 router.post('/addWishlistProduct/:id',isAuth,userController.addWishlistProduct);

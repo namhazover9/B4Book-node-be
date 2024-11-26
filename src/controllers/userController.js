@@ -1,6 +1,5 @@
 const path = require("path");
 const User = require("../models/user");
-const Role = require("../models/role");
 const Shop = require("../models/shop");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
@@ -14,109 +13,112 @@ const loadAuth = (req, res) => {
   res.render(path.join(__dirname, "../views/user.ejs"));
 };
 
-const GoogleLogin = async (req, res) => {
-  if (!req.user || !req.user.email || !req.user.name) {
-    return res.status(400).send("User data is missing.");
-  }
+// const GoogleLogin = async (req, res) => {
+//   if (!req.user || !req.user.email || !req.user.name) {
+//     return res.status(400).send("User data is missing.");
+//   }
 
-  try {
-    // Kiểm tra nếu người dùng đã tồn tại với Google login
-    let user = await User.findOne({
-      email: req.user.email,
-      authProvider: "google",
-    });
-    if (user.isActive === false) {
-      return res.json({
-        success: false,
-        message: "Your account is not active",
-      });
-    }
-    const customerRole = await Role.findOne({ name: "Customer" });
-    if (!user) {
-      user = await User.create({
-        email: req.user.email,
-        userName: `${req.user.name.givenName} ${req.user.name.familyName}`,
-        lastLogin: Date.now(),
-        isActive: true,
-        avatar: req.user.photos ? req.user.photos[0].value : '', 
-        authProvider: "google",
-        role: customerRole ? [customerRole._id] : [],
-      });
-      console.log("User created successfully:", user);
-      const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
-        expiresIn: "5m",
-      });
-      return res.json({
-       success: true,
-       message:"New user",
-      verifyToken,
-      })
-    }
+//   try {
+//     // Kiểm tra nếu người dùng đã tồn tại với Google login
+//     let user = await User.findOne({
+//       email: req.user.email,
+//       authProvider: "google",
+//     });
+//     if (user.isActive === false) {
+//       return res.json({
+//         success: false,
+//         message: "Your account is not active",
+//       });
+//     }
+//     const customerRole = await Role.findOne({ name: "Customer" });
+//     if (!user) {
+//       user = await User.create({
+//         email: req.user.email,
+//         userName: `${req.user.name.givenName} ${req.user.name.familyName}`,
+//         lastLogin: Date.now(),
+//         isActive: true,
+//         avatar: req.user.photos ? req.user.photos[0].value : '', 
+//         authProvider: "google",
+//         role: customerRole ? [customerRole._id] : [],
+//       });
+//       console.log("User created successfully:", user);
+//       const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
+//         expiresIn: "5m",
+//       });
+//       return res.json({
+//        success: true,
+//        message:"New user",
+//       verifyToken,
+//       })
+//     }
 
-    // Tạo JWT token cho người dùng
-    const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
-      expiresIn: "5m",
-    });
-    return res.json({
-      message: "Login success",
-      verifyToken,
-    })
-  } catch (error) {
-    console.error("Error in Google login:", error);
-    return res.status(500).send("An error occurred during Google login.");
-  }
-};
+//     // Tạo JWT token cho người dùng
+//     const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
+//       expiresIn: "5m",
+//     });
+//     return res.json({
+//       message: "Login success",
+//       verifyToken,
+//     })
+//   } catch (error) {
+//     console.error("Error in Google login:", error);
+//     return res.status(500).send("An error occurred during Google login.");
+//   }
+// };
 
-// function login by facebook
-const FacebookLogin = async (req, res) => {
-  const email = req.user.emails
-    ? req.user.emails[0].value
-    : "Email not provided";
+// // function login by facebook
+// const FacebookLogin = async (req, res) => {
+//   const email = req.user.emails
+//     ? req.user.emails[0].value
+//     : "Email not provided";
 
-  if (!req.user || !email || !req.user.displayName) {
-    return res.status(400).send("User data is missing.");
-  }
+//   if (!req.user || !email || !req.user.displayName) {
+//     return res.status(400).send("User data is missing.");
+//   }
 
-  try {
-    let user = await User.findOne({
-      email: email,
-      authProvider: "facebook",
-    });
-    if (user.isActive === false) {
-      return res.json({
-        success: false,
-        message: "Your account is not active",
-      });
-    }
-    const customerRole = await Role.findOne({
-      name: "Admin",
-    });
-    if (!user) {
-      user = await User.create({
-        email: email,
-        userName: req.user.displayName,
-        lastLogin: Date.now(),
-        isActive: true,
-        avartar: req.user.photos[0].value,
-        role: customerRole ? [customerRole._id] : [],
-        authProvider: "facebook",
-      });
-      console.log("Create Success");
-    }
-    const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
-      expiresIn: "5m",
-    });
-    return res.json({
-      message: "Login success",
-      verifyToken,
-    })
-  } catch (error) {
-    console.error("Error in successFacebookLogin:", error);
-    res.status(500).send("An error occurred during Facebook login.");
-  }
-};
+//   try {
+//     let user = await User.findOne({
+//       email: email,
+//       authProvider: "facebook",
+//     });
+//     if (user.isActive === false) {
+//       return res.json({
+//         success: false,
+//         message: "Your account is not active",
+//       });
+//     }
+//     const customerRole = await Role.findOne({
+//       name: "Admin",
+//     });
+//     if (!user) {
+//       user = await User.create({
+//         email: email,
+//         userName: req.user.displayName,
+//         lastLogin: Date.now(),
+//         isActive: true,
+//         avartar: req.user.photos[0].value,
+//         role: customerRole ? [customerRole._id] : [],
+//         authProvider: "facebook",
+//       });
+//       console.log("Create Success");
+//     }
+//     const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
+//       expiresIn: "5m",
+//     });
+//     return res.json({
+//       message: "Login success",
+//       verifyToken,
+//     })
+//   } catch (error) {
+//     console.error("Error in successFacebookLogin:", error);
+//     res.status(500).send("An error occurred during Facebook login.");
+//   }
+// };
 
 // add password function
+
+
+
 const addPassword = async (req, res) => {
   const { passWord } = req.body;
   try {
@@ -135,54 +137,86 @@ const addPassword = async (req, res) => {
 };
 
 // login by gmail and password
-const loginWithPassword = async(req,res) =>{
-  const {email, passWord} = req.body;
-  try {
+// const loginWithPassword = async(req,res) =>{
+//   const {email, passWord} = req.body;
+//   try {
     
-    const user = await User.findOne({
-     email:email,
-     authProvider:"google"
-    });
-    if(!user){
-      return res.status(404).send({message:"User not found"});
-    }
-    if(user.isActive === false){
-      return res.status(404).send({message:"Your account is not active", success: false});
-    }
-    const comparePassword = await bcrypt.compare(passWord,user.passWord);
-    if(!comparePassword){
-      return res.status(404).send({message:"Wrong password"});
-    }
-    const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
-      expiresIn: "5m",
-    });
-    res.json({
-      success: true,
-      message: "Login success",
-      verifyToken,
-    });
-  }catch(error){
-    Console.log(error)
-  }
+//     const user = await User.findOne({
+//      email:email,
+//      authProvider:"google"
+//     });
+//     if(!user){
+//       return res.status(404).send({message:"User not found"});
+//     }
+//     if(user.isActive === false){
+//       return res.status(404).send({message:"Your account is not active", success: false});
+//     }
+//     const comparePassword = await bcrypt.compare(passWord,user.passWord);
+//     if(!comparePassword){
+//       return res.status(404).send({message:"Wrong password"});
+//     }
+//     const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
+//       expiresIn: "5m",
+//     });
+//     res.json({
+//       success: true,
+//       message: "Login success",
+//       verifyToken,
+//     });
+//   }catch(error){
+//     Console.log(error)
+//   }
   
-}
+// }
+
+// send verify code when forgot password
+const sendVerifyCode = async (req, res) => {
+  try {
+    const {email} = req.body;
+    const randomeCode = generateRandomCode(6);
+    const user = await User.findOne({ email: email, authProvider: "google" });
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+    const verify = jwt.sign({user, randomeCode}, process.env.Activation_sec, {expiresIn: "5m"});
+    await sendMail(user.email, "VerifyToken", randomeCode);
+    return res.json({
+      success: true,
+      message: "Verify code sent successfully",
+      verify,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+} 
+
 
 // reset password fucntion
 const forgotPassword = async (req, res) => {
-  const { email } = req.body;
+  const { email, newPassword, verifyToken } = req.body;
  
   // generate random code function
  
   try {
-    const randomPassword = generateRandomCode(20);
-    const hash = await bcrypt.hash(randomPassword, 10);
+    const hash = await bcrypt.hash(newPassword, 10);
+    const verify = jwt.verify(verifyToken, process.env.Activation_sec);
+
+    if (!verify) {
+      return res.status(400).json({
+        isAuth: false,
+        message: "OTP Expired",
+      });
+    }
+    if (verify.otp.toString() !== otp.toString()) {
+      return res.status(400).json({
+        message: "Wrong otp",
+        isAuth: false,
+      });
+    }
     const user = await User.findOneAndUpdate({ email: email, authProvider: "google" }, { passWord: hash }, { new: true });
     if (!user) {
       return res.status(404).send({ message: "User not found" });
     }
-
-    await sendMail(email, "Reset password", randomPassword);
-    
     return res.json({
       success: true,  
       message: "Reset password",
@@ -363,15 +397,13 @@ const updateProfileUser = async (req, res) => {
 
 module.exports = {
   loadAuth,
-  GoogleLogin,
-  FacebookLogin,
   verifyToken,
   showProfile,
   registerShop,
-  loginWithPassword,
   addPassword,
   addWishlistProduct,
   deleteWishlistProduct,
   forgotPassword,
-  updateProfileUser
+  updateProfileUser,
+  sendVerifyCode
 };

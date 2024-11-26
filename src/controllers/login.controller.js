@@ -12,7 +12,7 @@ const postLogin = async (req, res, next) => {
     const { email, password, keepLogin } = req.body.account;
     
     // kiểm tra tài khoản có tồn tại không?
-    const account = await User.findOne({ email, authType: 'local' });
+    const account = await User.findOne({ email, authProvider: 'google' });
     if (!account) {
       return res.status(406).json({ message: 'Tài khoản không tồn tại !' });
     }
@@ -108,11 +108,42 @@ const postLoginWithGoogle = async (req, res, next) => {
     // user from middleware passport
     const { user } = req;
 
-    // nếu user có type = local thì báo lỗi
-    if (user.authType === 'local') {
-      return res.status(401).json({ message: 'Email đã được đăng ký.' });
-    }
+    // tạo refresh token
+    const refreshToken = await jwtConfig.encodedToken(
+      process.env.REFRESH_TOKEN,
+      { accountId: user._id, keepLogin: true },
+      constants.JWT_REFRESH_EXPIRES_TIME,
+    );
+    //save refresh token into database
+    await User.updateOne({ _id: user._id }, { refreshToken });
 
+    //create JWToken -> set header -> send client
+    const token = await jwtConfig.encodedToken(process.env.ACCESS_TOKEN, {
+      accountId: user._id,
+    });
+
+    if (express().get('env') === 'production') {
+      if (token)
+        return res.status(200).json({ token, refreshToken, success: true });
+    } else {
+      const expiresIn = new Date(Date.now() + constants.COOKIE_EXPIRES_TIME);
+      //set cookie for web browser
+      res.cookie('access_token', token, {
+        httpOnly: true,
+        expires: expiresIn,
+      });
+      res.status(200).json({ refreshToken, success: true });
+    }
+  } catch (error) {
+    return res.status(401).json({ message: 'Lỗi! Vui lòng thử lại.', error });
+  }
+};
+
+const postLoginWithFacebook = async (req, res, next) => {
+  try {
+    // user from middleware passport
+    const { user } = req;
+    
     // tạo refresh token
     const refreshToken = await jwtConfig.encodedToken(
       process.env.REFRESH_TOKEN,
@@ -208,4 +239,5 @@ module.exports = {
   postRefreshToken,
   getAuth,
   postLogout,
+  postLoginWithFacebook
 };
