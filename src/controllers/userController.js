@@ -117,8 +117,6 @@ const loadAuth = (req, res) => {
 
 // add password function
 
-
-
 const addPassword = async (req, res) => {
   const { passWord } = req.body;
   try {
@@ -190,10 +188,9 @@ const sendVerifyCode = async (req, res) => {
   }
 } 
 
-
 // reset password fucntion
 const forgotPassword = async (req, res) => {
-  const { email, newPassword, verifyToken } = req.body;
+  const { email, newPassword, verifyToken, randomeCode } = req.body;
  
   // generate random code function
  
@@ -204,13 +201,13 @@ const forgotPassword = async (req, res) => {
     if (!verify) {
       return res.status(400).json({
         isAuth: false,
-        message: "OTP Expired",
+        message: "code Expired",
       });
     }
-    if (verify.otp.toString() !== otp.toString()) {
+    console.log(verify.randomeCode !== randomeCode);
+    if (verify.randomeCode.toString() !== randomeCode.toString()) {
       return res.status(400).json({
         message: "Wrong otp",
-        isAuth: false,
       });
     }
     const user = await User.findOneAndUpdate({ email: email, authProvider: "google" }, { passWord: hash }, { new: true });
