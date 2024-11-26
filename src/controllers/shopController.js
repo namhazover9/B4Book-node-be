@@ -187,6 +187,15 @@ const searchShop = async (req, res) => {
   }
 };
 
+const getAllShop = async (req, res) => {
+  try {
+    const shops = await Shop.find({isActive: true},{isDeleted: false});
+    res.status(200).json(shops);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
    createVoucher,
   filterShop,
@@ -195,5 +204,6 @@ module.exports = {
   activeOrDeactiveVoucher,
   deleteVoucher,
   updateVoucher,
-  searchShop
+  searchShop,
+  getAllShop
 };
