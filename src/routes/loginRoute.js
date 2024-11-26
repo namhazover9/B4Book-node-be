@@ -15,6 +15,12 @@ loginApi.post(
   loginController.postLoginWithGoogle,
 );
 
+loginApi.post(
+  '/fb',
+  passport.authenticate('facebook-token', { session: false }),
+  loginController.postLoginWithFacebook,
+);
+
 // api: authenticated with jwt
 loginApi.get('/auth', passportAuth.jwtAuthentication, loginController.getAuth);
 

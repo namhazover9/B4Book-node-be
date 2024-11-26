@@ -30,10 +30,10 @@ passport.use(
 
         if (!user) {
           // Tìm vai trò mặc định 'user' trong cơ sở dữ liệu
-          const defaultRole = await Role.findOne({ name: 'Shop' });
+          const defaultRole = await Role.findOne({ name: 'Customer' });
 
           if (!defaultRole) {
-            throw new Error('Default role "Shop" not found.');
+            throw new Error('Default role "Customer" not found.');
           }
 
           // Tạo người dùng mới
@@ -45,12 +45,16 @@ passport.use(
             authProvider: 'google',
             authType: 'google',
             googleId: id,
+            lastLogin: Date.now(),
+            isActive: true,
+            avatar: req.user.photos ? req.user.photos[0].value : '', 
             role: [defaultRole._id], // Gán ObjectId của vai trò vào trường role
           });
 
           await user.save();
         }
-
+        user.lastLogin = Date.now();
+        await user.save();
         done(null, user);
       } catch (error) {
         console.error('Error in GoogleStrategy:', error.message);
@@ -69,9 +73,48 @@ passport.use(
       profileFields: ["id", "displayName", "photos", "email"],
       passReqToCallback: true,
     },
-    function (req, accessToken, refreshToken, profile, done) {
-      return done(null, profile);
-    }
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        const { id, name, emails } = profile;
+        const { userName } = name;
+        const email = emails[0].value;
+
+        // Kiểm tra người dùng đã tồn tại hay chưa
+        let user = await User.findOne({ facebookId: id, authType: 'facebook' });
+
+        if (!user) {
+          // Tìm vai trò mặc định 'user' trong cơ sở dữ liệu
+          const defaultRole = await Role.findOne({ name: 'Customer' });
+
+          if (!defaultRole) {
+            throw new Error('Default role "Customer" not found.');
+          }
+
+          // Tạo người dùng mới
+          user = new User({
+            email,
+            userName: userName,
+            lastLogin: new Date(),
+            isActive: true,
+            authProvider: 'facebook',
+            authType: 'facebook',
+            googleId: id,
+            lastLogin: Date.now(),
+            isActive: true,
+            avatar: req.user.photos ? req.user.photos[0].value : '', 
+            role: [defaultRole._id], // Gán ObjectId của vai trò vào trường role
+          });
+
+          await user.save();
+        }
+        user.lastLogin = Date.now();
+        await user.save();
+        done(null, user);
+      } catch (error) {
+        console.error('Error in GoogleStrategy:', error.message);
+        done(error, null);
+      }
+    },
   )
 );
 

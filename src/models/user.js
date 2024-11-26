@@ -15,6 +15,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    facebookId: {
+      type: String,
+      default: null,
+    },
     authType: {
       type: String,
       enum: ['local', 'google'],
