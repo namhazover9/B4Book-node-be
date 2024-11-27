@@ -43,13 +43,35 @@ const approvedShop = async (req, res) => {
 
 // function show all register form
 const showAllRegisterForm = async (req, res) => {
-    try {
-        const respone = await Shop.find({ isApproved: false });
-        res.status(200).json(respone);
-    } catch (error) {
-        res.status(500).send({ message: error.message });
-    }
-}
+  const { page = 1, limit = 10 } = req.query;
+
+  try {
+      // Chuyển đổi page và limit sang kiểu số
+      const pageNumber = parseInt(page, 10);
+      const limitNumber = parseInt(limit, 10);
+
+      // Tính số lượng bản ghi cần bỏ qua
+      const skip = (pageNumber - 1) * limitNumber;
+
+      // Tìm các shop chưa được phê duyệt với pagination
+      const shops = await Shop.find({ isApproved: false })
+          .skip(skip)
+          .limit(limitNumber);
+
+      // Đếm tổng số bản ghi chưa được phê duyệt
+      const total = await Shop.countDocuments({ isApproved: false });
+
+      res.status(200).json({
+          data: shops,
+          currentPage: pageNumber,
+          totalPages: Math.ceil(total / limitNumber),
+          totalItems: total,
+      });
+  } catch (error) {
+      res.status(500).send({ message: error.message });
+  }
+};
+
 
 // Show all user and filter by role
 const showAllUser = async (req, res) => {

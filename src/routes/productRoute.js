@@ -6,7 +6,6 @@ const upload = require("../utils/multer");
 
 router.post("/upload", upload.array("images", 10), productController.uploadImages);
 router.get("/search", productController.searchProduct);
-router.get("/filter", productController.filterProduct);
 router.get("/", productController.getAllProducts);
 router.get("/exportFile", productController.exportFileProduct);
 router.post("/create", upload.array("images", 10),  productController.createProduct);

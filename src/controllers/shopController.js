@@ -137,7 +137,7 @@ const updateVoucher = async (req, res) => {
 };
 
 // filter shop function
-const filterShop = async (req, res) => {
+const getAllShop = async (req, res) => {
   const { name, page = 1, limit = 10 } = req.query;
 
   try {
@@ -145,13 +145,16 @@ const filterShop = async (req, res) => {
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
 
+    // Điều kiện tìm kiếm: nếu có `name`, tìm theo `shopName`, nếu không, lấy tất cả
+    const query = name ? { shopName: { $regex: name, $options: 'i' } } : {};
+
     // Tìm kiếm với pagination
-    const shops = await Shop.find({ shopName: name })
+    const shops = await Shop.find(query)
       .skip((pageNumber - 1) * limitNumber) // Bỏ qua các phần tử của các trang trước
       .limit(limitNumber); // Giới hạn số lượng phần tử trong một trang
 
     // Đếm tổng số bản ghi
-    const total = await Shop.countDocuments({ shopName: name });
+    const total = await Shop.countDocuments(query);
 
     res.status(200).json({
       data: shops,
@@ -163,6 +166,7 @@ const filterShop = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 const searchShop = async (req, res) => {
   try {
@@ -187,18 +191,9 @@ const searchShop = async (req, res) => {
   }
 };
 
-const getAllShop = async (req, res) => {
-  try {
-    const shops = await Shop.find({isActive: true},{isDeleted: false});
-    res.status(200).json(shops);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
 
 module.exports = {
    createVoucher,
-  filterShop,
   getValueVoucher,
   getAllVoucher,
   activeOrDeactiveVoucher,
