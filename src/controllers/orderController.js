@@ -17,7 +17,9 @@ const request = require('request');
 exports.getCartForOrder = async (req, res) => {
   try {
     // Tìm giỏ hàng của người dùng hiện tại
-    const cart = await Cart.findOne({ customer: req.user._id }).populate('cartItems.product');
+
+    const cart = await Cart.findOne({ user: req.headers['id'] }).populate('cartItems.product');
+
 
     // Kiểm tra nếu không có giỏ hàng hoặc giỏ hàng rỗng
     if (!cart || cart.cartItems.length === 0) {
@@ -397,7 +399,14 @@ try {
     let totalOrderPrice = 0;
     const orderItems = [];
 
-    // Prepare order items and calculate total price
+    const orderData = {
+      customer: req.headers['id'], // ID của khách hàng hiện tại
+      shops: [],
+      shippingAddress,
+      paymentMethod,
+    };
+
+    // Duyệt qua từng shop để tạo danh sách đơn hàng
     for (const shop of shops) {
       for (const item of shop.orderItems) {
         const product = await Product.findById(item.product);

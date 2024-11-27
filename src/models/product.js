@@ -13,14 +13,20 @@ const productSchema = new mongoose.Schema(
     isApproved: { type: Boolean, required: true, default: false },
     isDeleted: { type: Boolean, required: true, default: false },
     category: [{type: String, required: true}],
-    countClick: { type: Number,default: 0},
-    numberOfRating: { type: Number,default: 0},
-    rating: { type: Number},
     salesNumber: { type: Number,default: 0},
     shopId: { type: mongoose.Schema.Types.ObjectId, ref: "Shop", required: true },
     voucherId: { type: mongoose.Schema.Types.ObjectId, ref: "Voucher" },
     images: [{ type: String, required: true }],
-    salesNumber: { type: Number, default: 0},
+    countClick: { type: Number,default: 0},
+    ratingResult: { type: Number,default: 0},
+    feedBacks:[
+      {
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      comment:{type: String,required: true},
+      createdAt: { type: Date, default: Date.now },
+      rating: { type: Number},
+    }
+  ]
   },
   {
     timestamps: true,

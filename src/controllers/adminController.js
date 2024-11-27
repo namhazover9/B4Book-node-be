@@ -1,6 +1,7 @@
 const Role = require("../models/role");
 const Shop = require("../models/shop");
 const User = require("../models/user");
+
 // function approve register form become a seller from user
 const approvedShop = async (req, res) => {
     try {
@@ -42,24 +43,131 @@ const approvedShop = async (req, res) => {
 
 // function show all register form
 const showAllRegisterForm = async (req, res) => {
-    try {
-        const respone = await Shop.find({ isApproved: false });
-        res.status(200).json(respone);
-    } catch (error) {
-        res.status(500).send({ message: error.message });
-    }
-}
-// Show all user for admin
-const showAllUser = async (req, res) => {
-    try {
-        const users = await User.find().populate({
-            path: "role", 
-            select: "name",
-        });
-        res.status(200).json(users);
-    } catch (error) {
-        res.status(500).send({ message: error.message });
-    }
+  const { page = 1, limit = 10 } = req.query;
+
+  try {
+      // Chuyển đổi page và limit sang kiểu số
+      const pageNumber = parseInt(page, 10);
+      const limitNumber = parseInt(limit, 10);
+
+      // Tính số lượng bản ghi cần bỏ qua
+      const skip = (pageNumber - 1) * limitNumber;
+
+      // Tìm các shop chưa được phê duyệt với pagination
+      const shops = await Shop.find({ isApproved: false })
+          .skip(skip)
+          .limit(limitNumber);
+
+      // Đếm tổng số bản ghi chưa được phê duyệt
+      const total = await Shop.countDocuments({ isApproved: false });
+
+      res.status(200).json({
+          data: shops,
+          currentPage: pageNumber,
+          totalPages: Math.ceil(total / limitNumber),
+          totalItems: total,
+      });
+  } catch (error) {
+      res.status(500).send({ message: error.message });
+  }
 };
 
-module.exports = { approvedShop, showAllRegisterForm, showAllUser };
+
+// Show all user and filter by role
+const showAllUser = async (req, res) => {
+  try {
+    const { role, status, page = 1, limit = 10 } = req.query; // Default: page 1, 10 items per page
+    const skip = (page - 1) * limit; // Calculate how many documents to skip
+    
+    // check role Customer
+    if (role === "Customer") {
+      const roleDoc = await Role.findOne({ name: role });
+      const customers = await User.find({ 
+        isActive: status, 
+        role: { $elemMatch: { $eq: roleDoc._id } } 
+      })
+        .skip(skip)
+        .limit(parseInt(limit)); // Apply pagination
+      const total = await User.countDocuments({ 
+        isActive: status, 
+        role: { $elemMatch: { $eq: roleDoc._id } } 
+      }); // Total documents count
+      res.status(200).json({ 
+        total, 
+        page: parseInt(page), 
+        limit: parseInt(limit), 
+        customers 
+      });
+    } 
+
+    // check role Shop
+    else if (role === "Shop") {
+      const roleDoc = await Role.findOne({ name: role });
+      const shops = await User.find({ 
+        isActive: status, 
+        role: { $elemMatch: { $eq: roleDoc._id } } 
+      })
+        .skip(skip)
+        .limit(parseInt(limit)); // Apply pagination
+      const total = await User.countDocuments({ 
+        isActive: status, 
+        role: { $elemMatch: { $eq: roleDoc._id } } 
+      }); // Total documents count
+      res.status(200).json({ 
+        total, 
+        page: parseInt(page), 
+        limit: parseInt(limit), 
+        shops 
+      });
+    } 
+    // if user want to display all user
+    else {
+      const users = await User.find()
+        .skip(skip)
+        .limit(parseInt(limit)); // Apply pagination
+      const total = await User.countDocuments(); // Total documents count
+      res.status(200).json({ 
+        total, 
+        page: parseInt(page), 
+        limit: parseInt(limit), 
+        users 
+      });
+    }
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+};
+
+// active or deactive account
+const activeOrDeactive = async (req, res) => {
+  try {
+    const { id, status,role } = req.query;
+   if (role === "Customer") {
+    const response = await User.findByIdAndUpdate(
+      id,
+      { isActive: status },
+      { new: true }
+    );
+    if (!response) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json({message: "Success", success: true});
+  }
+  
+  else if (role === "Shop") {
+    const response = await Shop.findByIdAndUpdate(
+      id,
+      { isActive: status },
+      { new: true }
+    );
+    if (!response) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json({message: "Success", success: true});
+  }
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+}
+
+module.exports = { approvedShop, showAllRegisterForm, showAllUser, activeOrDeactive };

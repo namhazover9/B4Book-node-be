@@ -1,60 +1,128 @@
 const path = require("path");
 const User = require("../models/user");
-const Role = require("../models/role");
 const Shop = require("../models/shop");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
+const WishlistProduct = require("../models/wishlistProduct");
+const Product = require("../models/product");
+const bcrypt = require("bcrypt");
+const { sendMail } = require("../middlewares/sendEmailPassword");
+const { generateRandomCode } = require("../middlewares/generateCode");
 dotenv.config();
 const loadAuth = (req, res) => {
   res.render(path.join(__dirname, "../views/user.ejs"));
 };
 
-const GoogleLogin = async (req, res) => {
-  if (!req.user || !req.user.email || !req.user.name) {
-    return res.status(400).send("User data is missing.");
-  }
+// const GoogleLogin = async (req, res) => {
+//   if (!req.user || !req.user.email || !req.user.name) {
+//     return res.status(400).send("User data is missing.");
+//   }
 
-  try {
-    // Kiểm tra nếu người dùng đã tồn tại với Google login
-    let user = await User.findOne({
-      email: req.user.email,
-      isActive: true,
-      authProvider: "google",
-    });
+//   try {
+//     // Kiểm tra nếu người dùng đã tồn tại với Google login
+//     let user = await User.findOne({
+//       email: req.user.email,
+//       authProvider: "google",
+//     });
+//     if (user.isActive === false) {
+//       return res.json({
+//         success: false,
+//         message: "Your account is not active",
+//       });
+//     }
+//     const customerRole = await Role.findOne({ name: "Customer" });
+//     if (!user) {
+//       user = await User.create({
+//         email: req.user.email,
+//         userName: `${req.user.name.givenName} ${req.user.name.familyName}`,
+//         lastLogin: Date.now(),
+//         isActive: true,
+//         avatar: req.user.photos ? req.user.photos[0].value : '', 
+//         authProvider: "google",
+//         role: customerRole ? [customerRole._id] : [],
+//       });
+//       console.log("User created successfully:", user);
+//       const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
+//         expiresIn: "5m",
+//       });
+//       return res.json({
+//        success: true,
+//        message:"New user",
+//       verifyToken,
+//       })
+//     }
 
- 
-    const customerRole = await Role.findOne({ name: "Customer" });
+//     // Tạo JWT token cho người dùng
+//     const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
+//       expiresIn: "5m",
+//     });
+//     return res.json({
+//       message: "Login success",
+//       verifyToken,
+//     })
+//   } catch (error) {
+//     console.error("Error in Google login:", error);
+//     return res.status(500).send("An error occurred during Google login.");
+//   }
+// };
 
-    if (!user) {
+// // function login by facebook
+// const FacebookLogin = async (req, res) => {
+//   const email = req.user.emails
+//     ? req.user.emails[0].value
+//     : "Email not provided";
 
-      user = await User.create({
-        email: req.user.email,
-        userName: `${req.user.name.givenName} ${req.user.name.familyName}`,
-        lastLogin: Date.now(),
-        isActive: true,
-        avatar: req.user.photos ? req.user.photos[0].value : '', 
-        authProvider: "google",
-        role: customerRole ? [customerRole._id] : [],
-      });
-      console.log("User created successfully:", user);
-    }
+//   if (!req.user || !email || !req.user.displayName) {
+//     return res.status(400).send("User data is missing.");
+//   }
 
-    // Tạo JWT token cho người dùng
-    const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
-      expiresIn: "5m",
-    });
-    return res.redirect("http://localhost:5173?verifyToken=" + verifyToken);
-  } catch (error) {
-    console.error("Error in Google login:", error);
-    return res.status(500).send("An error occurred during Google login.");
-  }
-};
+//   try {
+//     let user = await User.findOne({
+//       email: email,
+//       authProvider: "facebook",
+//     });
+//     if (user.isActive === false) {
+//       return res.json({
+//         success: false,
+//         message: "Your account is not active",
+//       });
+//     }
+//     const customerRole = await Role.findOne({
+//       name: "Admin",
+//     });
+//     if (!user) {
+//       user = await User.create({
+//         email: email,
+//         userName: req.user.displayName,
+//         lastLogin: Date.now(),
+//         isActive: true,
+//         avartar: req.user.photos[0].value,
+//         role: customerRole ? [customerRole._id] : [],
+//         authProvider: "facebook",
+//       });
+//       console.log("Create Success");
+//     }
+//     const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
+//       expiresIn: "5m",
+//     });
+//     return res.json({
+//       message: "Login success",
+//       verifyToken,
+//     })
+//   } catch (error) {
+//     console.error("Error in successFacebookLogin:", error);
+//     res.status(500).send("An error occurred during Facebook login.");
+//   }
+// };
+
+// add password function
 
 const addPassword = async (req, res) => {
   const { passWord } = req.body;
   try {
-    const user = await User.findByIdAndUpdate(req.user._id,{
-      passWord:passWord},
+    const hash = await bcrypt.hash(passWord, 10);
+    const user = await User.findByIdAndUpdate(req.headers['id'],{
+      passWord:hash},
       { new: true });
     if (!user) {
       return res.status(404).send({ message: "User not found" });
@@ -66,115 +134,125 @@ const addPassword = async (req, res) => {
   }
 };
 
-// function login by facebook
-const FacebookLogin = async (req, res) => {
-  if (!req.user) res.redirect("/failure");
-  console.log(req.user);
-  const email = req.user.emails
-    ? req.user.emails[0].value
-    : "Email not provided";
-
-  if (!req.user || !email || !req.user.displayName) {
-    return res.status(400).send("User data is missing.");
-  }
-
-  try {
-    let user = await User.findOne({
-      email: email,
-      isActive: true,
-      authProvider: "facebook",
-    });
-    const customerRole = await Role.findOne({
-      name: "Admin",
-    });
-    if (!user) {
-      user = await User.create({
-        email: email,
-        userName: req.user.displayName,
-        lastLogin: Date.now(),
-        isActive: true,
-        avartar: req.user.photos[0].value,
-        role: customerRole ? [customerRole._id] : [],
-        authProvider: "facebook",
-      });
-      console.log("Create Success");
-    }
-    const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
-      expiresIn: "5m",
-    });
-    return res.redirect("http://localhost:5173?verifyToken=" + verifyToken);
-  } catch (error) {
-    console.error("Error in successFacebookLogin:", error);
-    res.status(500).send("An error occurred during Facebook login.");
-  }
-};
-
-const loginWithPassword = async(req,res) =>{
-  const {email, passWord} = req.body;
-  try {
-    const user = await User.findOne({
-     email:email,
-     passWord:passWord  
-    });
-    if(!user){
-      return res.status(404).send({message:"User not found"});
-    }
-    const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
-      expiresIn: "5m",
-    });
-    res.json({
-      success: true,
-      message: "Login success",
-      verifyToken,
-    });
-  }catch(error){
-    Console.log(error)
-  }
+// login by gmail and password
+// const loginWithPassword = async(req,res) =>{
+//   const {email, passWord} = req.body;
+//   try {
+    
+//     const user = await User.findOne({
+//      email:email,
+//      authProvider:"google"
+//     });
+//     if(!user){
+//       return res.status(404).send({message:"User not found"});
+//     }
+//     if(user.isActive === false){
+//       return res.status(404).send({message:"Your account is not active", success: false});
+//     }
+//     const comparePassword = await bcrypt.compare(passWord,user.passWord);
+//     if(!comparePassword){
+//       return res.status(404).send({message:"Wrong password"});
+//     }
+//     const verifyToken = jwt.sign({ user }, process.env.Activation_sec, {
+//       expiresIn: "5m",
+//     });
+//     res.json({
+//       success: true,
+//       message: "Login success",
+//       verifyToken,
+//     });
+//   }catch(error){
+//     Console.log(error)
+//   }
   
-}
+// }
 
-const failureGoogleLogin = (req, res) => {
-  res.send("Error");
-};
+// send verify code when forgot password
+const sendVerifyCode = async (req, res) => {
+  try {
+    const {email} = req.body;
+    const randomeCode = generateRandomCode(6);
+    const user = await User.findOne({ email: email, authProvider: "google" });
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+    const verify = jwt.sign({user, randomeCode}, process.env.Activation_sec, {expiresIn: "5m"});
+    await sendMail(user.email, "VerifyToken", randomeCode);
+    return res.json({
+      success: true,
+      message: "Verify code sent successfully",
+      verify,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+} 
 
-const failureFacebookLogin = (req, res) => {
-  res.send("Error");
+// reset password fucntion
+const forgotPassword = async (req, res) => {
+  const { email, newPassword, verifyToken, randomeCode } = req.body;
+ 
+  // generate random code function
+ 
+  try {
+    const hash = await bcrypt.hash(newPassword, 10);
+    const verify = jwt.verify(verifyToken, process.env.Activation_sec);
+
+    if (!verify) {
+      return res.status(400).json({
+        isAuth: false,
+        message: "code Expired",
+      });
+    }
+    console.log(verify.randomeCode !== randomeCode);
+    if (verify.randomeCode.toString() !== randomeCode.toString()) {
+      return res.status(400).json({
+        message: "Wrong otp",
+      });
+    }
+    const user = await User.findOneAndUpdate({ email: email, authProvider: "google" }, { passWord: hash }, { new: true });
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+    return res.json({
+      success: true,  
+      message: "Reset password",
+    });
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 // render home page and verify token
-const renderHomePage = (req, res) => {
-  try {
-    const { verifyToken } = req.body;
+// const verifyToken = (req, res) => {
+//   try {
+//     const { verifyToken } = req.body;
     
-    if (verifyToken) {
+//     if (verifyToken) {
 
-      const verify = jwt.verify(verifyToken, process.env.Activation_sec);
-      if (!verify) {
-        return res.status(404).send({ message: "Token not valid" });
-      }
-      const token = jwt.sign({ _id: verify.user._id }, process.env.Jwt_sec, {
-        expiresIn: "5d",
-      });
+//       const verify = jwt.verify(verifyToken, process.env.Activation_sec);
+//       if (!verify) {
+//         return res.status(404).send({ message: "Token not valid" });
+//       }
+//       const token = jwt.sign({ _id: verify.user._id }, process.env.Jwt_sec, {
+//         expiresIn: "5d",
+//       });
       
-      return res.json({
-        success: true,
-        message: "Login success",
-        token,
-      });
-    }
-    res.status(200).send({
-      success: true,
-      message: "Welcome to the homepage!",
-    });
-  } catch (error) {
-    res.status(500).send({ message: error.message });
-  }
-};
+//       return res.json({
+//         success: true,
+//         message: "verify success",
+//         token,
+//       });
+//     }
+//   } catch (error) {
+//     res.status(500).send({ message: error.message });
+//   }
+// };
 
 // show profile for user
 const showProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.headers['id']);
     res.json(user);
   } catch (error) {}
 };
@@ -199,13 +277,105 @@ const registerShop = async (req, res) => {
             avartar:avartar,
             isActive: false,
             isApproved: false,
-            user: req.user._id
+            user: req.headers['id']
         });
         res.status(200).json(respone);
     } catch (error) {
         
     }
 };
+
+// add product to wishlist
+const addWishlistProduct = async (req, res) => {
+  try {
+    // find product by id
+    const product = await Product.findById(req.params.id);
+    // check if product not found
+    if (!product) {
+      return res.status(404).send({ message: "Product not found" });
+    }
+
+    // find user by 
+    const user = await User.findById(req.headers['id']);
+    // check user if user not found
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+
+    // find wishlist product by product id and user id
+    const wishlistProduct = await WishlistProduct.findOne({
+      product: product._id,
+      user: user._id,
+    })
+    // if wishlist product is existed return 
+    if (wishlistProduct) {
+      return res.status(400).send({ message: "Product already added to wishlist" });
+    }
+
+    // add wishlist product into database
+    await WishlistProduct.create({
+      product: product._id,
+      user: user._id,
+    })
+    // respond with success message
+    res.status(200).send({ message: "Product added to wishlist" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({ message: "Internal server error" });
+  }
+};
+
+// delete product from wishlist
+const deleteWishlistProduct = async (req, res) => {
+  try {
+    // find wishlist product by id and delete it
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).send({ message: "Product not found" });
+    }
+    const wishlistProduct = await WishlistProduct.findOneAndDelete({
+      product: product._id,
+      user: req.headers['id'],
+    })
+    
+    // check if wishlist not found
+    if (!wishlistProduct ) {
+      return res.status(404).send({ message: "Product does not exist in wishlist" });
+    }
+
+    // respond status with success message
+    res.status(200).send({ message: "Product deleted from wishlist" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({ message: "Internal server error" });
+  }
+};
+
+
+// update profile
+const updateProfileUser = async (req, res) => {
+  try {
+    const updates = req.body;
+    //check if password is provided
+    if(updates.passWord){
+      // hash password
+      const hash = await bcrypt.hash(updates.passWord, 10);
+      // update password
+      updates.passWord = hash
+    }
+    // find user by id and update it
+    const user = await User.findOneAndUpdate(req.user, updates, {
+      new: true,
+    });
+    
+    if (!user) throw new Error("User not found");
+    res.status(200).json({ message: "User updated successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+
 
 // const createRole = async (req, res) => {
 //   try {
@@ -224,13 +394,12 @@ const registerShop = async (req, res) => {
 
 module.exports = {
   loadAuth,
-  GoogleLogin,
-  failureGoogleLogin,
-  FacebookLogin,
-  failureFacebookLogin,
-  renderHomePage,
   showProfile,
   registerShop,
-  loginWithPassword,
-  addPassword
+  addPassword,
+  addWishlistProduct,
+  deleteWishlistProduct,
+  forgotPassword,
+  updateProfileUser,
+  sendVerifyCode
 };

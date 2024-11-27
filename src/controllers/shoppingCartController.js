@@ -18,6 +18,13 @@ exports.addProductToCart = async (req, res) => {
     try {
       const { productId } = req.body;
   
+      // Lấy userId từ headers
+      const userId = req.headers['id'];
+  
+      if (!userId) {
+        return res.status(400).json({ status: 'error', message: 'User ID is required in headers' });
+      }
+  
       // Lấy thông tin sản phẩm từ Product
       const product = await Product.findById(productId);
   
@@ -26,12 +33,12 @@ exports.addProductToCart = async (req, res) => {
       }
   
       // Lấy Cart cho user đã đăng nhập
-      let cart = await Cart.findOne({ user: req.user._id });
+      let cart = await Cart.findOne({ user: userId });
   
       if (!cart) {
         // Tạo mới giỏ hàng nếu chưa tồn tại
         cart = await Cart.create({
-          user: req.user._id,
+          user: userId,
           cartItems: [
             { product: productId, title: product.title, price: product.price, images: product.images },
           ],
@@ -49,11 +56,11 @@ exports.addProductToCart = async (req, res) => {
           cart.cartItems[productIndex] = cartItem;
         } else {
           // Sản phẩm chưa tồn tại: thêm vào giỏ hàng
-          cart.cartItems.push({ 
-            product: productId, 
+          cart.cartItems.push({
+            product: productId,
             title: product.title,
-            price: product.price, 
-            images: product.images, 
+            price: product.price,
+            images: product.images,
           });
         }
       }
@@ -73,32 +80,47 @@ exports.addProductToCart = async (req, res) => {
     } catch (error) {
       res.status(500).json({ status: 'error', message: error.message });
     }
-};
+  };
+  
   
   
 // @desc    Get logged user cart
 // @route   GET /
 // @access  Private/Customer
 exports.getLoggedUserCart = async (req, res) => {
-    try {
-        const cart = await Cart.findOne({ user: req.user._id });
-        console.log("cart", req.user._id);
-        if (!cart) {
-        return res.status(404).json({
-            status: 'error',
-            message: `There is no cart for this user id: ${req.user._id}`,
-        });
-        }
+  try {
+      const userId = req.headers['id'];
+      const page = parseInt(req.query.page) || 1; // Trang hiện tại (mặc định là 1)
+      const limit = parseInt(req.query.limit) || 10; // Số mục mỗi trang (mặc định là 10)
+      const skip = (page - 1) * limit; // Bỏ qua các mục của các trang trước
 
-        res.status(200).json({
-        status: 'success',
-        numOfCartItems: cart.cartItems.length,
-        data: cart,
-        });
-    } catch (error) {
-        res.status(500).json({ status: 'error', message: error.message });
-    }
+      console.log("User ID:", userId);
+
+      // Lấy cart của user
+      const cart = await Cart.findOne({ user: userId });
+      if (!cart) {
+          return res.status(404).json({
+              status: 'error',
+              message: `There is no cart for this user id: ${userId}`,
+          });
+      }
+
+      // Paginate cart items
+      const paginatedCartItems = cart.cartItems.slice(skip, skip + limit);
+
+      res.status(200).json({
+          status: 'success',
+          currentPage: page,
+          totalPages: Math.ceil(cart.cartItems.length / limit),
+          numOfCartItems: paginatedCartItems.length,
+          totalCartItems: cart.cartItems.length,
+          data: paginatedCartItems,
+      });
+  } catch (error) {
+      res.status(500).json({ status: 'error', message: error.message });
+  }
 };
+
   
 // @desc    Remove specific cart item
 // @route   DELETE /cart/:itemId
@@ -106,7 +128,7 @@ exports.getLoggedUserCart = async (req, res) => {
 exports.removeSpecificCartItem = async (req, res) => {
     try {
         const cart = await Cart.findOneAndUpdate(
-            { user: req.user._id },
+            { user: req.headers['id']},
             { $pull: { cartItems: { _id: req.params.itemId } } },
             { new: true }
         );
@@ -136,7 +158,7 @@ exports.removeSpecificCartItem = async (req, res) => {
 // @access  Private/Customer
 exports.clearCart = async (req, res) => {
     try {
-        await Cart.findOneAndDelete({ user: req.user._id });
+        await Cart.findOneAndDelete({ user: req.headers['id'] });
         res.status(204).send();
     } catch (error) {
         res.status(500).json({ status: 'error', message: error.message });
@@ -150,11 +172,11 @@ exports.updateCartItemQuantity = async (req, res) => {
     try {
         const { quantity } = req.body;
 
-        const cart = await Cart.findOne({ user: req.user._id });
+        const cart = await Cart.findOne({ user: req.headers['id']});
         if (!cart) {
             return res.status(404).json({
                 status: 'error',
-                message: `There is no cart for user ${req.user._id}`,
+                message: `There is no cart for user ${req.headers['id']}`,
             });
         }
 

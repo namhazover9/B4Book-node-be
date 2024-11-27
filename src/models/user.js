@@ -11,6 +11,22 @@ const userSchema = new mongoose.Schema(
     avartar: { type: String },
     authProvider: { type: String, required: true },
     passWord: { type: String},
+    googleId: {
+      type: String,
+      default: null,
+    },
+    facebookId: {
+      type: String,
+      default: null,
+    },
+    failedLoginTimes: {
+      type: Number,
+      default: 0,
+    },
+    refreshToken: {
+      type: String,
+      default: null,
+    },
     role: [
       { type: mongoose.Schema.Types.ObjectId, ref: "Role", required: true },
     ],
@@ -19,6 +35,22 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// userSchema.pre('save', async function (next) {
+//   try {
+//     if (this.authType === 'local') {
+//       const saltRounds = parseInt(process.env.SALT_ROUND);
+//       //hashing password...
+//       const hashPassword = await bcrypt.hash(this.password, saltRounds);
+//       this.password = hashPassword;
+//       next();
+//     }
+//     next();
+//   } catch (error) {
+//     next(error);
+//   }
+// });
+
 
 const User = mongoose.model("User", userSchema);
 
