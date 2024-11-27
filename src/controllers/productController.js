@@ -16,6 +16,9 @@ exports.uploadImages = async (req, res) => {
   }
 };
 
+// @desc    Remove image from Cloudinary
+// @route   DELETE /:id/remove-image
+// @access  Private/Shop
 exports.removeImage = async (req, res) => {
   try {
     const { imageUrl } = req.body; // URL của hình ảnh cần xóa
@@ -44,6 +47,13 @@ exports.removeImage = async (req, res) => {
 
 
 
+
+
+
+
+// @desc    Get product by ID
+// @route   GET /:id
+// @access  Public/User
 exports.getProductById = async (req, res) => {
   try {
     // Tìm và tăng countClick lên 1
@@ -65,6 +75,11 @@ exports.getProductById = async (req, res) => {
   }
 };
 
+
+// @desc    Create a new product
+// @route   POST /create
+// @access  Private/Shop
+
 exports.getProductByShop = async (req, res) => {
   try {
     const products = await Product.find({ shopId: req.params.id });
@@ -73,6 +88,7 @@ exports.getProductByShop = async (req, res) => {
     res.status(500).send({ message: error.message });
   }
 };
+
 
 exports.createProduct = async (req, res) => {
   try {
@@ -116,6 +132,9 @@ exports.createProduct = async (req, res) => {
   }
 };
 
+// @desc    Update a product
+// @route   PUT /:id
+// @access  Private/Shop
 exports.updateProduct = async (req, res) => {
   try {
     const {
@@ -164,6 +183,9 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
+// @desc    Delete a product
+// @route   DELETE /:id
+// @access  Private/Shop
 exports.deleteProduct = async (req, res) => {
   const id = req.body.id;
   if (!id) {

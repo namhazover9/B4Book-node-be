@@ -12,8 +12,8 @@ const calcTotalCartPrice = (cart) => {
 };
 
 // @desc    Add product to cart
-// @route   POST /api/v1/cart
-// @access  Private/User
+// @route   POST /cart/add
+// @access  Private/Customer
 exports.addProductToCart = async (req, res) => {
     try {
       const { productId } = req.body;
@@ -85,8 +85,8 @@ exports.addProductToCart = async (req, res) => {
   
   
 // @desc    Get logged user cart
-// @route   GET /api/v1/cart
-// @access  Private/User
+// @route   GET /
+// @access  Private/Customer
 exports.getLoggedUserCart = async (req, res) => {
   try {
       const userId = req.headers['id'];
@@ -123,8 +123,8 @@ exports.getLoggedUserCart = async (req, res) => {
 
   
 // @desc    Remove specific cart item
-// @route   DELETE /api/v1/cart/:itemId
-// @access  Private/User
+// @route   DELETE /cart/:itemId
+// @access  Private/Customer
 exports.removeSpecificCartItem = async (req, res) => {
     try {
         const cart = await Cart.findOneAndUpdate(
@@ -154,8 +154,8 @@ exports.removeSpecificCartItem = async (req, res) => {
 };
   
 // @desc    Clear logged user cart
-// @route   DELETE /api/v1/cart
-// @access  Private/User
+// @route   /cart
+// @access  Private/Customer
 exports.clearCart = async (req, res) => {
     try {
         await Cart.findOneAndDelete({ user: req.headers['id'] });
@@ -166,8 +166,8 @@ exports.clearCart = async (req, res) => {
 };
   
 // @desc    Update specific cart item quantity
-// @route   PUT /api/v1/cart/:itemId
-// @access  Private/User
+// @route   PUT /cart/:itemId
+// @access  Private/Customer
 exports.updateCartItemQuantity = async (req, res) => {
     try {
         const { quantity } = req.body;
