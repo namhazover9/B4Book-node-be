@@ -14,6 +14,7 @@
     "b4book-node-be": "file:",
     "body-parser": "^1.20.3",
     "cloudinary": "^1.41.3",
+    "config": "^3.3.12",
     "cookie-session": "^2.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -22,13 +23,17 @@
     "express-rate-limit": "^7.4.1",
     "express-session": "^1.18.1",
     "express-validator": "^7.2.0",
+    "jquery": "^3.7.1",
     "jsonwebtoken": "^9.0.2",
+    "moment": "^2.30.1",
     "mongoose": "^8.8.1",
     "multer": "^1.4.5-lts.1",
     "multer-storage-cloudinary": "^4.0.0",
     "passport": "^0.7.0",
     "passport-facebook": "^3.0.0",
-    "passport-google-oauth2": "^0.2.0"
+    "passport-google-oauth2": "^0.2.0",
+    "request": "^2.88.2",
+    "stripe": "^17.4.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.7"
