@@ -88,25 +88,39 @@ exports.addProductToCart = async (req, res) => {
 // @route   GET /api/v1/cart
 // @access  Private/User
 exports.getLoggedUserCart = async (req, res) => {
-    try {
-        const cart = await Cart.findOne({ user: req.headers['id']});
-        console.log("cart", req.headers['id']);
-        if (!cart) {
-        return res.status(404).json({
-            status: 'error',
-            message: `There is no cart for this user id: ${req.headers['id']}`,
-        });
-        }
+  try {
+      const userId = req.headers['id'];
+      const page = parseInt(req.query.page) || 1; // Trang hiện tại (mặc định là 1)
+      const limit = parseInt(req.query.limit) || 10; // Số mục mỗi trang (mặc định là 10)
+      const skip = (page - 1) * limit; // Bỏ qua các mục của các trang trước
 
-        res.status(200).json({
-        status: 'success',
-        numOfCartItems: cart.cartItems.length,
-        data: cart,
-        });
-    } catch (error) {
-        res.status(500).json({ status: 'error', message: error.message });
-    }
+      console.log("User ID:", userId);
+
+      // Lấy cart của user
+      const cart = await Cart.findOne({ user: userId });
+      if (!cart) {
+          return res.status(404).json({
+              status: 'error',
+              message: `There is no cart for this user id: ${userId}`,
+          });
+      }
+
+      // Paginate cart items
+      const paginatedCartItems = cart.cartItems.slice(skip, skip + limit);
+
+      res.status(200).json({
+          status: 'success',
+          currentPage: page,
+          totalPages: Math.ceil(cart.cartItems.length / limit),
+          numOfCartItems: paginatedCartItems.length,
+          totalCartItems: cart.cartItems.length,
+          data: paginatedCartItems,
+      });
+  } catch (error) {
+      res.status(500).json({ status: 'error', message: error.message });
+  }
 };
+
   
 // @desc    Remove specific cart item
 // @route   DELETE /api/v1/cart/:itemId
