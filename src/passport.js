@@ -69,14 +69,15 @@ passport.use(
     {
       clientID: process.env.CLIENT_ID_FB, // Your Credentials here.
       clientSecret: process.env.CLIENT_SECRET_FB, // Your Credentials here.
+      profileFields: ['id', 'emails', 'name'] ,
       fbGraphVersion: 'v3.0'
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        const { id, familyName, givenName, emails } = profile;
+        const { id, name, emails } = profile;
 
-        const displayName  = familyName + ' ' + givenName;
-       
+        const displayName = name.familyName + ' ' + name.givenName; 
+       console.log(id)
         const email = emails[0].value;
 
         // Kiểm tra người dùng đã tồn tại hay chưa
@@ -97,7 +98,7 @@ passport.use(
             lastLogin: new Date(),
             isActive: true,
             authProvider: 'facebook',
-            googleId: id,
+            facebookId: id,
             lastLogin: Date.now(),
             isActive: true,
            
