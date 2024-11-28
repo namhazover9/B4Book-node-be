@@ -89,35 +89,36 @@ exports.addProductToCart = async (req, res) => {
 // @access  Private/Customer
 exports.getLoggedUserCart = async (req, res) => {
   try {
-      const userId = req.headers['id'];
-      const page = parseInt(req.query.page) || 1; // Trang hiện tại (mặc định là 1)
-      const limit = parseInt(req.query.limit) || 10; // Số mục mỗi trang (mặc định là 10)
-      const skip = (page - 1) * limit; // Bỏ qua các mục của các trang trước
-
-      console.log("User ID:", userId);
-
-      // Lấy cart của user
-      const cart = await Cart.findOne({ user: userId });
-      if (!cart) {
-          return res.status(404).json({
-              status: 'error',
-              message: `There is no cart for this user id: ${userId}`,
-          });
-      }
-
-      // Paginate cart items
-      const paginatedCartItems = cart.cartItems.slice(skip, skip + limit);
-
-      res.status(200).json({
-          status: 'success',
-          currentPage: page,
-          totalPages: Math.ceil(cart.cartItems.length / limit),
-          numOfCartItems: paginatedCartItems.length,
-          totalCartItems: cart.cartItems.length,
-          data: paginatedCartItems,
+    const userId = req.headers['id'];
+    const page = parseInt(req.query.page) || 1; // Trang hiện tại (mặc định là 1)
+    const limit = parseInt(req.query.limit) || 10; // Số mục mỗi trang (mặc định là 10)
+    const skip = (page - 1) * limit; // Bỏ qua các mục của các trang trước
+    console.log("User ID:", userId);
+    // Lấy cart của user
+    const cart = await Cart.findOne({ user: userId });
+    // Xử lý khi giỏ hàng không tồn tại hoặc không có sản phẩm
+    if (!cart || cart.cartItems.length === 0) {
+      return res.status(200).json({
+        status: 'success',
+        currentPage: page,
+        totalPages: 0,
+        numOfCartItems: 0,
+        totalCartItems: 0,
+        data: [], // Trả về mảng trống
       });
+    }
+    // Paginate cart items
+    const paginatedCartItems = cart.cartItems.slice(skip, skip + limit);
+    res.status(200).json({
+      status: 'success',
+      currentPage: page,
+      totalPages: Math.ceil(cart.cartItems.length / limit),
+      numOfCartItems: paginatedCartItems.length,
+      totalCartItems: cart.cartItems.length,
+      data: paginatedCartItems,
+    });
   } catch (error) {
-      res.status(500).json({ status: 'error', message: error.message });
+    res.status(500).json({ status: 'error', message: error.message });
   }
 };
 
