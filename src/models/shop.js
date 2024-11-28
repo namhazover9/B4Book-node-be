@@ -7,7 +7,6 @@ const shopSchema = new mongoose.Schema(
     shopAddress: {type: String, required: true },
     phoneNumber: { type: String, required: true },
     isActive: { type: Boolean, required: true },
-    avartar: { type: String, required: true },
     isApproved:{ type: Boolean, required: true },
     images: [{ type: String, required: true }],
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },

@@ -8,6 +8,7 @@ const Product = require("../models/product");
 const bcrypt = require("bcrypt");
 const { sendMail } = require("../middlewares/sendEmailPassword");
 const { generateRandomCode } = require("../middlewares/generateCode");
+const { data } = require("jquery");
 dotenv.config();
 const loadAuth = (req, res) => {
   res.render(path.join(__dirname, "../views/user.ejs"));
@@ -260,10 +261,10 @@ const showProfile = async (req, res) => {
 // function register from normal user become a seller
 const registerShop = async (req, res) => {
     try {
-        const { shopName, shopEmail, shopAddress, phoneNumber, avartar } = req.body;
+        const { shopName, shopEmail, shopAddress, phoneNumber, images } = req.body;
         const reg = /^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)*$/;
         const isCheckEmail = reg.test(shopEmail);
-        if (!shopEmail || !shopName || !shopAddress || !phoneNumber || !avartar ) {
+        if (!shopEmail || !shopName || !shopAddress || !phoneNumber || !images ) {
             return res.status(400).send({ message: "The input is required" });
         }
        else if(!isCheckEmail){
@@ -274,7 +275,7 @@ const registerShop = async (req, res) => {
             shopEmail: shopEmail,
             shopAddress:shopAddress, 
             phoneNumber:phoneNumber,
-            avartar:avartar,
+            images:images,
             isActive: false,
             isApproved: false,
             user: req.headers['id']
@@ -377,11 +378,40 @@ const updateProfileUser = async (req, res) => {
 
 const showDetailShop = async (req, res) => {
   try {
-    const shop = await Shop.findOne({ user: req.params.id });
-    res.json(shop);
-  } catch (error) {}
+    // Tìm shop dựa trên user ID
+    const shop = await Shop.findById(req.params.id );
+
+    if (!shop) {
+      return res.status(404).json({ message: "Shop not found" });
+    }
+
+    // Tìm 5 sản phẩm bán chạy nhất thuộc về shop này
+    const products = await Product.find({ shopId: shop._id })
+      .sort({ salesNumber: -1 }) // Sắp xếp giảm dần theo salesNumber
+      .limit(10); // Giới hạn 10 sản phẩm
+    console.log(products)
+    // Trả về thông tin shop và danh sách sản phẩm best seller
+    res.json({ shop, bestSellers: products });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
 
+const switchShop = async (req, res) => {
+  try {
+    const userId = req.headers['id']; // Kiểm tra ID có được gửi đúng không
+    console.log("User ID from headers:", userId); // Debug
+    const shop = await Shop.findOne({ user: userId }); // Truy vấn với user ID
+    if (!shop) {
+      return res.status(404).json({ message: "Shop not found" });
+    }
+    res.status(200).json({ message: "success", data: shop }); // Đảm bảo cấu trúc trả về là chính xác
+  } catch (error) {
+    console.error("Error in switchShop API:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 // const createRole = async (req, res) => {
 //   try {
@@ -408,5 +438,6 @@ module.exports = {
   forgotPassword,
   updateProfileUser,
   sendVerifyCode,
-  showDetailShop
+  showDetailShop,
+  switchShop
 };
