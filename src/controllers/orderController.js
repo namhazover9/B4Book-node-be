@@ -18,7 +18,7 @@ exports.getCartForOrder = async (req, res) => {
   try {
     // Tìm giỏ hàng của người dùng hiện tại
 
-    const cart = await Cart.findOne({ user: req.headers['id'] }).populate('cartItems.product');
+    const cart = await Cart.findOne({ user:req.user._id }).populate('cartItems.product');
 
 
     // Kiểm tra nếu không có giỏ hàng hoặc giỏ hàng rỗng
@@ -106,7 +106,7 @@ exports.getCartForOrder = async (req, res) => {
 exports.getCustomerOrders = async (req, res) => {
   try {
     // Tìm tất cả các order của Customer hiện tại
-    const orders = await Order.find({ customer: req.headers['id']}).populate({
+    const orders = await Order.find({ customer: req.user._id }).populate({
       path: 'shops.orderItems.product',
       select: 'title price images',
     });
@@ -142,7 +142,7 @@ exports.getOrderById = async (req, res) => {
   try {
     const { orderId } = req.params;
     // Tìm order dựa trên ID và Customer hiện tại
-    const order = await Order.findOne({ _id: orderId , customer: req.headers['id']}).populate({
+    const order = await Order.findOne({ _id: orderId , customer: req.user._id }).populate({
       path: 'shops.orderItems.product',
       select: 'title price images',
     });
@@ -285,7 +285,7 @@ exports.getAllOrdersByStatus = async (req, res) => {
 //         success_url: `${process.env.CLIENT_URL}/order/success`, // Replace with your frontend success page
 //         cancel_url: `${process.env.CLIENT_URL}/order/cancel`,   // Replace with your frontend cancel page
 //         metadata: {
-//           userId: req.headers['id'].toString(),
+//           userId: req.user._id .toString(),
 //           shops: JSON.stringify(shops),
 //           shippingAddress: JSON.stringify(shippingAddress),
 //           paymentMethod,
@@ -400,7 +400,7 @@ try {
     const orderItems = [];
 
     const orderData = {
-      customer: req.headers['id'], // ID của khách hàng hiện tại
+      customer:req.user._id , // ID của khách hàng hiện tại
       shops: [],
       shippingAddress,
       paymentMethod,

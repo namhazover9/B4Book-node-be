@@ -92,7 +92,7 @@ const postLogin = async (req, res, next) => {
           httpOnly: true,
           expires: expiresIn,
         });
-        return res.status(200).json({ refreshToken, message: 'success' });
+        return res.status(200).json({ token,refreshToken, message: 'success' });
       }
     }
   } catch (error) {
@@ -132,7 +132,7 @@ const postLoginWithGoogle = async (req, res, next) => {
         httpOnly: true,
         expires: expiresIn,
       });
-      res.status(200).json({ refreshToken, success: true });
+      res.status(200).json({ token,refreshToken, success: true });
     }
   } catch (error) {
     return res.status(401).json({ message: 'Lỗi! Vui lòng thử lại.', error });
@@ -168,7 +168,7 @@ const postLoginWithFacebook = async (req, res, next) => {
         httpOnly: true,
         expires: expiresIn,
       });
-      res.status(200).json({ refreshToken, success: true });
+      res.status(200).json({ token,refreshToken, success: true });
     }
   } catch (error) {
     return res.status(401).json({ message: 'Lỗi! Vui lòng thử lại.', error });

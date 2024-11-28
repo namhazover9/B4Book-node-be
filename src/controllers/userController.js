@@ -122,7 +122,7 @@ const addPassword = async (req, res) => {
   const { passWord } = req.body;
   try {
     const hash = await bcrypt.hash(passWord, 10);
-    const user = await User.findByIdAndUpdate(req.headers['id'],{
+    const user = await User.findByIdAndUpdate(req.user._id ,{
       passWord:hash},
       { new: true });
     if (!user) {
@@ -253,7 +253,7 @@ const forgotPassword = async (req, res) => {
 // show profile for user
 const showProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.headers['id']);
+    const user = await User.findById(req.user._id );
     res.json(user);
   } catch (error) {}
 };
@@ -278,7 +278,7 @@ const registerShop = async (req, res) => {
             images:images,
             isActive: false,
             isApproved: false,
-            user: req.headers['id']
+            user: req.user._id 
         });
         res.status(200).json(respone);
     } catch (error) {
@@ -297,7 +297,7 @@ const addWishlistProduct = async (req, res) => {
     }
 
     // find user by 
-    const user = await User.findById(req.headers['id']);
+    const user = await User.findById(req.user._id );
     // check user if user not found
     if (!user) {
       return res.status(404).send({ message: "User not found" });
@@ -336,7 +336,7 @@ const deleteWishlistProduct = async (req, res) => {
     }
     const wishlistProduct = await WishlistProduct.findOneAndDelete({
       product: product._id,
-      user: req.headers['id'],
+      user: req.user._id ,
     })
     
     // check if wishlist not found
@@ -400,11 +400,14 @@ const showDetailShop = async (req, res) => {
 
 const switchShop = async (req, res) => {
   try {
-    const userId = req.headers['id']; // Kiểm tra ID có được gửi đúng không
-    console.log("User ID from headers:", userId); // Debug
+    const userId = req.user._id ; // Kiểm tra ID có được gửi đúng không
     const shop = await Shop.findOne({ user: userId }); // Truy vấn với user ID
     if (!shop) {
       return res.status(404).json({ message: "Shop not found" });
+    }
+    if(shop.isActive === false || shop.isApproved === false){
+      console.log(shop.isActive === false)
+      return res.status(400).json({ message: "Shop not active" });
     }
     res.status(200).json({ message: "success", data: shop }); // Đảm bảo cấu trúc trả về là chính xác
   } catch (error) {
