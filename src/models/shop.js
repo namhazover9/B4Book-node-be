@@ -8,7 +8,7 @@ const shopSchema = new mongoose.Schema(
     phoneNumber: { type: String, required: true },
     isActive: { type: Boolean, required: true },
     isApproved:{ type: Boolean, required: true },
-    images: [{ type: String, required: true }],
+    images: [{ type: String}],
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   {
