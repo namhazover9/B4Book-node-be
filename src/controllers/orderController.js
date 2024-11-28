@@ -106,7 +106,7 @@ exports.getCartForOrder = async (req, res) => {
 exports.getCustomerOrders = async (req, res) => {
   try {
     // Tìm tất cả các order của Customer hiện tại
-    const orders = await Order.find({ customer: req.headers['id'] }).populate({
+    const orders = await Order.find({ customer: req.headers['id']}).populate({
       path: 'shops.orderItems.product',
       select: 'title price images',
     });
