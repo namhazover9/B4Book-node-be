@@ -375,6 +375,12 @@ const updateProfileUser = async (req, res) => {
   }
 }
 
+const showDetailShop = async (req, res) => {
+  try {
+    const shop = await Shop.findOne({ user: req.params.id });
+    res.json(shop);
+  } catch (error) {}
+};
 
 
 // const createRole = async (req, res) => {
@@ -401,5 +407,6 @@ module.exports = {
   deleteWishlistProduct,
   forgotPassword,
   updateProfileUser,
-  sendVerifyCode
+  sendVerifyCode,
+  showDetailShop
 };
