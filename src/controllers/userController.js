@@ -259,30 +259,54 @@ const showProfile = async (req, res) => {
 
 // function register from normal user become a seller
 const registerShop = async (req, res) => {
-    try {
-        const { shopName, shopEmail, shopAddress, phoneNumber, avartar } = req.body;
-        const reg = /^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)*$/;
-        const isCheckEmail = reg.test(shopEmail);
-        if (!shopEmail || !shopName || !shopAddress || !phoneNumber || !avartar ) {
-            return res.status(400).send({ message: "The input is required" });
-        }
-       else if(!isCheckEmail){
-            return res.status(400).send({ message: "Email is not valid" });
-        }
-        const respone = await Shop.create({
-            shopName: shopName, 
-            shopEmail: shopEmail,
-            shopAddress:shopAddress, 
-            phoneNumber:phoneNumber,
-            avartar:avartar,
-            isActive: false,
-            isApproved: false,
-            user: req.headers['id']
-        });
-        res.status(200).json(respone);
-    } catch (error) {
-        
-    }
+  try {
+    const {
+      shopEmail,
+      shopName,
+      shopAddress,
+      phoneNumber,
+    } = req.body;
+
+      const reg = /^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)*$/;
+      const images = req.files.map((file) => file.path); 
+      const isCheckEmail = reg.test(shopEmail);
+      console.log(shopName, shopEmail, shopAddress, phoneNumber);
+      
+      if(!isCheckEmail){
+          return res.status(400).send({ message: "Email is not valid" });
+      }
+      if (!shopName || !shopAddress || !phoneNumber ) {
+          return res.status(400).send({ message: "The input is required" });
+      }
+
+      const register = new Shop({
+          shopName,
+          shopEmail,
+          shopAddress,
+          phoneNumber,
+          images,
+          isActive: false,
+          isApproved: false,
+          user: req.headers['id']
+      });
+      //  else if(!isCheckEmail){
+      //       return res.status(400).send({ message: "Email is not valid" });
+      //   }
+      // const respone = await Shop.create({
+      //     shopName: shopName, 
+      //     shopEmail: isCheckEmail,
+      //     shopAddress:shopAddress, 
+      //     phoneNumber:phoneNumber,
+      //     images: images,
+      //     isActive: false,
+      //     isApproved: false,
+      //     user: req.headers['id']
+      // });
+      await register.save();
+      res.status(201).json(register);
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
 };
 
 // add product to wishlist

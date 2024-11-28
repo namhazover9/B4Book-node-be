@@ -215,12 +215,12 @@ const updateShopInfo = async (req, res) => {
     shop.shopName = shopName || shop.shopName;
     shop.shopAddress = shopAddress || shop.shopAddress;
     shop.phoneNumber = phoneNumber || shop.phoneNumber;
-  
+    shop.images = images || shop.images;
 
     // Thêm hình ảnh mới nếu có
-    if (images.length > 0) {
-      shop.images.push(...images);
-    }
+    // if (images.length > 0) {
+    //   shop.images.push(...images);
+    // }
 
     await shop.save();
     res.status(200).json(shop);

@@ -3,7 +3,8 @@ const router = express();
 const passport = require('passport');
 require("../passport");
 const userController = require("../controllers/userController");
-const { isAuth } = require("../middlewares/auth");
+const { isAuth, isCustomer } = require("../middlewares/auth");
+const upload = require("../utils/multer");
 
 router.get("/", userController.loadAuth);
 // router.post("/createRole", userController.createRole);
@@ -55,7 +56,7 @@ router.get("/", userController.loadAuth);
 
 
 router.get("/Userprofile", isAuth, userController.showProfile);
-router.post("/registerShop",isAuth, userController.registerShop);
+router.post("/registerShop",  upload.array("images", 1), isAuth, userController.registerShop);
 router.post("/sendVerify", userController.sendVerifyCode);
 // router.post("/login", userController.loginWithPassword);
 router.put("/addPassword",isAuth, userController.addPassword);
