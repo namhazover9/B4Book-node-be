@@ -7,7 +7,7 @@ const createVoucher = async (req, res) => {
 
   try {
     // find shop base on user._id
-    const shop = await Shop.findOne({ user: req.headers['id']});
+    const shop = await Shop.findOne({ user:req.user._id });
     // create current date to compare with valid date and expired date
     const currentDate = new Date().setHours(0, 0, 0, 0);
   
@@ -205,7 +205,7 @@ const updateShopInfo = async (req, res) => {
 
     const images = req.files?.map((file) => file.path) || []; // Lấy URL nếu có file mới
 
-    const shop = await Shop.findById(req.headers['id']);
+    const shop = await Shop.findById(req.user._id );
     if (!shop) {
       return res.status(404).send({ message: "Shop not found" });
     }
@@ -229,6 +229,20 @@ const updateShopInfo = async (req, res) => {
   }
 };
 
+const switchCustomer = async (req, res) => {
+  try {
+    const userId = req.user._id ; // Kiểm tra ID có được gửi đúng không
+    const shop = await Shop.findOne({ user: userId }); // Truy vấn với user ID
+    if (!shop) {
+      return res.status(404).json({ message: "Shop not found" });
+    }
+    res.status(200).json({ message: "success", data: shop }); // Đảm bảo cấu trúc trả về là chính xác
+  } catch (error) {
+    console.error("Error in switchShop API:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
    createVoucher,
   getValueVoucher,
@@ -238,5 +252,6 @@ module.exports = {
   updateVoucher,
   searchShop,
   getAllShop,
-  updateShopInfo
+  updateShopInfo,
+  switchCustomer
 };

@@ -209,7 +209,7 @@ exports.feebackProduct = async (req, res) => {
   try {
     const { rating, comment } = req.body; 
     const productId = req.params.id; 
-    const user = req.headers['id'];
+    const user = req.user._id ;
     const product = await Product.findByIdAndUpdate(productId, { $inc: { numberOfRating: 1} }, { new: true });
 
     if (!product) {
