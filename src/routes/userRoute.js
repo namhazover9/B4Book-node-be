@@ -63,6 +63,7 @@ router.post('/addWishlistProduct/:id',isAuth,userController.addWishlistProduct);
 router.delete("/deleteWishlistProduct/:id",isAuth,userController.deleteWishlistProduct);
 router.put("/forgotPassword", userController.forgotPassword);
 router.put("/updateProfile",isAuth, userController.updateProfileUser);
+router.get("/switchShop",isAuth, userController.switchShop);
 router.get("/showDetailShop/:id", userController.showDetailShop);
 
 module.exports = router;
