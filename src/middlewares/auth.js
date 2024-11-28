@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 const User = require("../models/user");
 const Role = require("../models/role");
+const Shop = require("../models/shop");
 dotenv.config();
 
 // Check role, only admin can use function belong in admin
@@ -45,30 +46,30 @@ const isShop = async (req, res, next) => {
         status: "ERROR",
       });
     }
-    const user = await User.findById(userId);
-    if (!user) {
+    const shop = await Shop.findById(userId);
+    if (!shop) {
       return res.status(404).json({
-        message: "User not found",
+        message: "Shop not found",
         status: "ERROR",
       });
     }
-    const roleShop = await Role.findOne({ name: "Shop" }); // Tìm role "Shop"
+    // const roleShop = await Role.findOne({ name: "Shop" }); // Tìm role "Shop"
 
-    if (!roleShop) {
-      return res.status(404).json({
-        message: "Role 'Shop' not found",
-        status: "ERROR",
-      });
-    }
+    // if (!roleShop) {
+    //   return res.status(404).json({
+    //     message: "Role 'Shop' not found",
+    //     status: "ERROR", 
+    //   });
+    // }
 
     // Kiểm tra nếu roleShop._id có trong mảng role của user
-    const hasShopRole = user.role.some(roleId => roleId.toString() === roleShop._id.toString());
-    if (!hasShopRole) {
-      return res.status(403).json({
-        message: "You are not authorized as a Shop",
-        status: "ERROR",
-      });
-    }
+    // const hasShopRole = user.role.some(roleId => roleId.toString() === roleShop._id.toString());
+    // if (!hasShopRole) {
+    //   return res.status(403).json({
+    //     message: "You are not authorized as a Shop",
+    //     status: "ERROR",
+    //   });
+    // }
 
     next(); // Nếu hợp lệ, chuyển tiếp sang middleware tiếp theo
   } catch (error) {
