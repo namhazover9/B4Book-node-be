@@ -109,7 +109,6 @@ exports.getLoggedUserCart = async (req, res) => {
     const page = parseInt(req.query.page) || 1; // Trang hiện tại (mặc định là 1)
     const limit = parseInt(req.query.limit) || 10; // Số mục mỗi trang (mặc định là 10)
     const skip = (page - 1) * limit; // Bỏ qua các mục của các trang trước
-    console.log("User ID:", userId);
     // Lấy cart của user
     const cart = await Cart.findOne({ user: userId });
     // Xử lý khi giỏ hàng không tồn tại hoặc không có sản phẩm
