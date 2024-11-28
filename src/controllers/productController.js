@@ -45,12 +45,6 @@ exports.removeImage = async (req, res) => {
 };
 
 
-
-
-
-
-
-
 // @desc    Get product by ID
 // @route   GET /:id
 // @access  Public/User
@@ -423,7 +417,6 @@ exports.getAllProducts = async (req, res) => {
         sortOptions = {}; // Không sắp xếp nếu không có tham số `sort`
         break;
     }
-
     // Truy vấn danh sách sản phẩm theo điều kiện lọc và sắp xếp
     const products = await Product.find(query)
       .sort(sortOptions) // Áp dụng sắp xếp
