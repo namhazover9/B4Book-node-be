@@ -191,6 +191,43 @@ const searchShop = async (req, res) => {
   }
 };
 
+// @desc    Update a product
+// @route   PUT /:id
+// @access  Private/Shop
+const updateShopInfo = async (req, res) => {
+  try {
+    const {
+      shopEmail,
+      shopName,
+      shopAddress,
+      phoneNumber,
+    } = req.body;
+
+    const images = req.files?.map((file) => file.path) || []; // Lấy URL nếu có file mới
+
+    const shop = await Shop.findById(req.headers['id']);
+    if (!shop) {
+      return res.status(404).send({ message: "Shop not found" });
+    }
+
+    // Cập nhật các trường
+    shop.shopEmail = shopEmail || shop.shopEmail;
+    shop.shopName = shopName || shop.shopName;
+    shop.shopAddress = shopAddress || shop.shopAddress;
+    shop.phoneNumber = phoneNumber || shop.phoneNumber;
+  
+
+    // Thêm hình ảnh mới nếu có
+    if (images.length > 0) {
+      shop.images.push(...images);
+    }
+
+    await shop.save();
+    res.status(200).json(shop);
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+};
 
 module.exports = {
    createVoucher,
@@ -200,5 +237,6 @@ module.exports = {
   deleteVoucher,
   updateVoucher,
   searchShop,
-  getAllShop
+  getAllShop,
+  updateShopInfo
 };

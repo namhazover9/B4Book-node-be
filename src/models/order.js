@@ -30,7 +30,7 @@ const orderSchema = new mongoose.Schema(
         },
         shippingCost: { type: Number, default: 0 },
         voucherDiscount: { type: mongoose.Schema.Types.ObjectId, ref: 'Voucher'},
-        totalShopPrice: { type: Number },
+        totalShopPrice: { type: Number},
       },
     ],
     shippingAddress: {
