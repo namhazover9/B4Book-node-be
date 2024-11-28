@@ -112,9 +112,7 @@ const isAuth = async (req, res, next) => {
         });
       }
       const decode = jwt.verify(token, process.env.ACCESS_TOKEN);
-      console.log(decode);
       req.user = await User.findById(decode.sub.accountId);
-      console.log(req.user);
       if (!req.user) {
         return res.status(404).json({
           message: "Login first",
