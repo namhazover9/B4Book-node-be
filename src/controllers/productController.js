@@ -58,9 +58,6 @@ exports.getProductById = async (req, res) => {
       { $inc: { countClick: 1 } }, // Sử dụng $inc để tăng giá trị trường countClick
       { new: true } // Tùy chọn này trả về bản ghi đã được cập nhật
     );
-
-    console.log(product);
-
     if (product) {
       res.json(product);
     } else {
@@ -204,7 +201,6 @@ exports.updateProduct = async (req, res) => {
 // @access  Private/Shop
 exports.deleteProduct = async (req, res) => {
   const id = req.params.id;
-  console.log("1111",id);
   if (!id) {
     return res.status(400).json({ message: "Product ID is required" });
   }
@@ -310,7 +306,6 @@ exports.updateFeedbacks = async (req, res) => {
 
     // Tìm feedback cần cập nhật
     const feedback = product.feedBacks.id(feedbackId);
-    console.log(feedback)
     // Kiểm tra nếu feedback không tồn tại
     if (!feedback) {
       return res.status(404).json({ message: "Feedback not found" });

@@ -413,7 +413,6 @@ const showDetailShop = async (req, res) => {
     const products = await Product.find({ shopId: shop._id })
       .sort({ salesNumber: -1 }) // Sắp xếp giảm dần theo salesNumber
       .limit(10); // Giới hạn 10 sản phẩm
-    console.log(products)
     // Trả về thông tin shop và danh sách sản phẩm best seller
     res.json({ shop, bestSellers: products });
   } catch (error) {

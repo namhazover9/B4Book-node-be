@@ -220,6 +220,38 @@ exports.getAllOrdersByStatus = async (req, res) => {
 };
 
 
+exports.getAllOrderByShop = async (req, res) => {
+  try {
+    const shopId  = req.params.id; 
+    const status = req.query.status;
+    const orders = await Order.find({
+      "shops.shopId": shopId, // Lọc các shop có shopId phù hợp
+    })
+      .populate({
+        path: "shops.orderItems.product", // Lấy thông tin chi tiết sản phẩm
+        select: "name price images", // Các trường cần lấy của sản phẩm
+      })
+      .populate({
+        path: "customer", // Lấy thông tin chi tiết khách hàng
+        select: "userName email phoneNumber", // Các trường cần lấy của khách hàng
+      })
+      // .populate({
+      //   path: "shops.voucherDiscount", // Lấy thông tin voucher (nếu có)
+      //   select: "code discountAmount", // Các trường voucher cần lấy
+      // })
+      .sort({ createdAt: -1 }); // Sắp xếp đơn hàng mới nhất ở trên cùng
+    if (!orders || orders.length === 0) {
+      return res.status(404).json({ message: "No orders found for this shop." });
+    }
+
+    res.status(200).json({ success: true, orders });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Server Error", error });
+  }
+};
+
+
 
 
 
