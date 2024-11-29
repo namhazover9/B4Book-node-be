@@ -16,8 +16,7 @@ const calcTotalCartPrice = (cart) => {
 // @access  Private/Customer
 exports.addProductToCart = async (req, res) => {
   try {
-      const { productId } = req.body;
-  
+    const { productId } = req.body;
     const product = await Product.findById(productId);
 
     if (!product) {
@@ -47,35 +46,14 @@ exports.addProductToCart = async (req, res) => {
         cartItem.quantity += 1;
         cart.cartItems[productIndex] = cartItem;
       } else {
-      // Product exists in cart, update product quantity
-          const productIndex = cart.cartItems.findIndex(
-              (item) => item.product.toString() === productId 
-          );
-          if (productIndex > -1) {
-              const cartItem = cart.cartItems[productIndex];
-              cartItem.quantity += 1;
-              cart.cartItems[productIndex] = cartItem;
-          } else {
-              // Product not exist in cart, push product to cartItems array
-              cart.cartItems.push({ product: productId, price: product.price });
-          }
         // Sản phẩm chưa tồn tại: thêm vào giỏ hàng
         cart.cartItems.push({ 
           product: productId, 
-          title: product.title,
+          title: product.title, 
           price: product.price, 
-          images: product.images, 
+          images: product.images 
         });
       }
-      // Calculate total cart price
-      calcTotalCartPrice(cart);
-      await cart.save();
-      res.status(200).json({
-          status: 'success',
-          message: 'Product added to cart successfully',
-          numOfCartItems: cart.cartItems.length,
-          data: cart,
-      });
     }
 
     // Tính tổng giá trị của giỏ hàng
@@ -84,18 +62,20 @@ exports.addProductToCart = async (req, res) => {
     // Lưu giỏ hàng
     await cart.save();
 
-    res.status(200).json({
+    // Gửi phản hồi
+    return res.status(200).json({
       status: 'success',
       message: 'Product added to cart successfully',
       numOfCartItems: cart.cartItems.length,
       data: cart,
     });
-}
-    catch (error) {
-      res.status(500).json({ status: 'error', message: error.message });
-      res.status(500).json({ status: 'error', message: error.message });
-}
+
+  } catch (error) {
+    // Bắt lỗi và gửi phản hồi lỗi
+    return res.status(500).json({ status: 'error', message: error.message });
+  }
 };
+
 
   
   

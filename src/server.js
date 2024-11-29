@@ -5,7 +5,6 @@ dotenv.config();
 const cors = require("cors");
 const session = require("express-session");
 const bodyParser = require("body-parser");
-const path = require("path");
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger.json');
 const cookieParser = require('cookie-parser');
@@ -45,8 +44,6 @@ app.use((req, res, next) => {
   next();
 });
 
-app.set("views", path.join(__dirname, "./src/views"));
-app.set("view engine", "ejs");
 
 // Routes
 // api documentations

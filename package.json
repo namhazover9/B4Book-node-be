@@ -21,7 +21,6 @@
     "cookie-session": "^2.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "ejs": "^3.1.10",
     "exceljs": "^4.4.0",
     "express": "^4.21.1",
     "express-rate-limit": "^7.4.1",
@@ -39,6 +38,8 @@
     "passport-facebook-token": "^4.0.0",
     "passport-google-oauth2": "^0.2.0",
     "passport-google-token": "^0.1.2",
+    "request": "^2.88.2",
+    "stripe": "^17.4.0",
     "swagger-ui-express": "^5.0.1",
     "yarn": "^1.22.22"
   },
