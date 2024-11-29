@@ -465,10 +465,11 @@ exports.searchProduct = async (req, res) => {
   }
 };
 
+// export file excel product
 exports.exportFileProduct = async (req, res) => {
   try {
     // Lấy tất cả sản phẩm từ cơ sở dữ liệu
-    const products = await Product.find({});
+    const products = await Product.find({user: req.user._id});
 
     // Nếu không có sản phẩm nào, trả về lỗi
     if (products.length === 0) {

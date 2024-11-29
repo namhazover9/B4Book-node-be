@@ -16,17 +16,14 @@ const calcTotalCartPrice = (cart) => {
 // @access  Private/Customer
 exports.addProductToCart = async (req, res) => {
   try {
-      const { productId } = req.body;
-  
+    const { productId } = req.body;
+    // Lấy thông tin sản phẩm từ Product
     const product = await Product.findById(productId);
-
     if (!product) {
       return res.status(404).json({ status: 'error', message: 'Product not found' });
     }
-
     // Lấy Cart cho user đã đăng nhập
     let cart = await Cart.findOne({ user: req.user._id });
-
     if (!cart) {
       // Tạo mới giỏ hàng nếu chưa tồn tại
       cart = await Cart.create({
@@ -40,62 +37,36 @@ exports.addProductToCart = async (req, res) => {
       const productIndex = cart.cartItems.findIndex(
         (item) => item.product.toString() === productId
       );
-
       if (productIndex > -1) {
         // Sản phẩm đã tồn tại: cập nhật số lượng
         const cartItem = cart.cartItems[productIndex];
         cartItem.quantity += 1;
         cart.cartItems[productIndex] = cartItem;
       } else {
-      // Product exists in cart, update product quantity
-          const productIndex = cart.cartItems.findIndex(
-              (item) => item.product.toString() === productId 
-          );
-          if (productIndex > -1) {
-              const cartItem = cart.cartItems[productIndex];
-              cartItem.quantity += 1;
-              cart.cartItems[productIndex] = cartItem;
-          } else {
-              // Product not exist in cart, push product to cartItems array
-              cart.cartItems.push({ product: productId, price: product.price });
-          }
         // Sản phẩm chưa tồn tại: thêm vào giỏ hàng
-        cart.cartItems.push({ 
-          product: productId, 
+        cart.cartItems.push({
+          product: productId,
           title: product.title,
-          price: product.price, 
-          images: product.images, 
+          price: product.price,
+          images: product.images,
         });
       }
-      // Calculate total cart price
-      calcTotalCartPrice(cart);
-      await cart.save();
-      res.status(200).json({
-          status: 'success',
-          message: 'Product added to cart successfully',
-          numOfCartItems: cart.cartItems.length,
-          data: cart,
-      });
     }
-
     // Tính tổng giá trị của giỏ hàng
     calcTotalCartPrice(cart);
-
     // Lưu giỏ hàng
     await cart.save();
-
     res.status(200).json({
       status: 'success',
       message: 'Product added to cart successfully',
       numOfCartItems: cart.cartItems.length,
       data: cart,
     });
-}
-    catch (error) {
-      res.status(500).json({ status: 'error', message: error.message });
-      res.status(500).json({ status: 'error', message: error.message });
-}
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
 };
+
 
   
   
