@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 const WishlistProduct = require("../models/wishlistProduct");
 const Product = require("../models/product");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const { sendMail } = require("../middlewares/sendEmailPassword");
 const { generateRandomCode } = require("../middlewares/generateCode");
 const { data } = require("jquery");
@@ -389,7 +389,7 @@ const updateProfileUser = async (req, res) => {
       updates.passWord = hash
     }
     // find user by id and update it
-    const user = await User.findOneAndUpdate(req.user, updates, {
+    const user = await User.findOneAndUpdate(req.user._id, updates, {
       new: true,
     });
     

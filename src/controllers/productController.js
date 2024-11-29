@@ -78,12 +78,33 @@ exports.getProductById = async (req, res) => {
 
 exports.getProductByShop = async (req, res) => {
   try {
-    const products = await Product.find({ shopId: req.params.id });
-    res.json(products);
+    const { page = 1, limit = 10 } = req.query; // Mặc định: page = 1, limit = 10
+    const shopId = req.params.id;
+    // Chuyển đổi `page` và `limit` sang kiểu số
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    // Tìm sản phẩm với shopId
+    const products = await Product.find({ shopId, isDeleted: false })
+      .skip((pageNumber - 1) * limitNumber) // Bỏ qua (page-1) * limit sản phẩm
+      .limit(limitNumber); // Lấy số lượng sản phẩm tương ứng với limit
+    // Đếm tổng số sản phẩm để trả về thông tin tổng số trang
+    const totalProducts = await Product.countDocuments({ shopId });
+
+    res.json({
+      status: 'success',
+      data: {
+        currentPage: pageNumber,
+        totalPages: Math.ceil(totalProducts / limitNumber),
+        totalProducts,
+        products,  // trả về mảng sản phẩm
+      },
+    });
   } catch (error) {
     res.status(500).send({ message: error.message });
   }
 };
+
 
 
 exports.createProduct = async (req, res) => {
@@ -100,11 +121,10 @@ exports.createProduct = async (req, res) => {
       stock,
       isApproved,
       isDeleted,
-      shopId,
     } = req.body;
 
     const images = req.files.map((file) => file.path); // Lấy URL từ Cloudinary
-
+    const shopId = req.user._id
     const product = new Product({
       title,
       category,
@@ -117,7 +137,7 @@ exports.createProduct = async (req, res) => {
       stock,
       isApproved,
       isDeleted,
-      shopId,
+      shopId:shopId,
       images,
     });
 
@@ -183,7 +203,8 @@ exports.updateProduct = async (req, res) => {
 // @route   DELETE /:id
 // @access  Private/Shop
 exports.deleteProduct = async (req, res) => {
-  const id = req.body.id;
+  const id = req.params.id;
+  console.log("1111",id);
   if (!id) {
     return res.status(400).json({ message: "Product ID is required" });
   }
@@ -197,8 +218,7 @@ exports.deleteProduct = async (req, res) => {
     product.isDeleted = true;
     await product.save();
 
-    req.flash("success", "Product deleted successfully");
-    return res.redirect("/products"); // Đổi URL đến trang phù hợp
+    return res.status(200).json({ message: "Delete product successfully" }); // Đổi URL đến trang phù hợp
   } catch (error) {
     console.error("Error during soft delete:", error);
     return res.status(500).json({ message: "Internal server error" });
@@ -469,8 +489,7 @@ exports.searchProduct = async (req, res) => {
 exports.exportFileProduct = async (req, res) => {
   try {
     // Lấy tất cả sản phẩm từ cơ sở dữ liệu
-    const products = await Product.find({user: req.user._id});
-
+    const products = await Product.find({shopId: req.user._id});
     // Nếu không có sản phẩm nào, trả về lỗi
     if (products.length === 0) {
       return res.status(404).json({ message: "No products found" });

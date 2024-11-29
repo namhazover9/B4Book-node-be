@@ -28,10 +28,10 @@ const postLogin = async (req, res, next) => {
         .status(401)
         .json({ failedLoginTimes, message: 'Quá số lần đăng nhập sai !' });
     }
-
+    console.log(password)
     // kiểm tra password
     const isMatch = await bcrypt.compare(password, account.passWord);
-    
+    console.log(isMatch);
     // ! sai mật khẩu -> thất bại
     if (!isMatch) {
       // tăng số lần đăng nhập thất bại
