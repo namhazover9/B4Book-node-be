@@ -16,4 +16,9 @@ router.get("/:orderId", isAuth, OrderController.getOrderById);
 
 router.post('/place-order-vn',  OrderController.createVNpay);
 
+router.patch("/:orderId/confirmed", OrderController.orderConfirmedStatus);
+router.patch("/:orderId/shipped", OrderController.orderShippedStatus);
+router.patch("/:orderId/delivered", OrderController.orderDeliveredStatus);
+router.patch("/:orderId/cancelled", OrderController.orderCancelledStatus);
+
 module.exports = router;

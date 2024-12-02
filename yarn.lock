@@ -245,6 +245,7 @@ aws4@^1.8.0:
     passport-facebook-token "^4.0.0"
     passport-google-oauth2 "^0.2.0"
     passport-google-token "^0.1.2"
+    request "^2.88.2"
     stripe "^17.4.0"
     swagger-ui-express "^5.0.1"
     yarn "^1.22.22"

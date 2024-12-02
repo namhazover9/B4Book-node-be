@@ -4,7 +4,13 @@ const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     code: { type: String, required: true },
-    value: { type: Number, required: true },
+    value: { type: Number, 
+      required: true,
+      validate: {
+        validator: (v) => v >= 0 && v <= 100,
+        message: "Discount value must be between 0 and 100"
+      },
+    },
     expired: { type: Date, required: true },
     validDate:{type:Date,required:true},
     isActive: { type: Boolean},

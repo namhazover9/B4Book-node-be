@@ -15,18 +15,15 @@ const productSchema = new mongoose.Schema(
     category: [{type: String, required: true}],
     salesNumber: { type: Number,default: 0},
     shopId: { type: mongoose.Schema.Types.ObjectId, ref: "Shop", required: true },
-    voucherId: { type: mongoose.Schema.Types.ObjectId, ref: "Voucher" },
     images: [{ type: String, required: true }],
     countClick: { type: Number,default: 0},
     ratingResult: { type: Number,default: 0},
-    feedBacks:[
-      {
+    feedBacks:[{
       userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      comment:{type: String,required: true},
+      comment:{type: String},
       createdAt: { type: Date, default: Date.now },
       rating: { type: Number},
-    }
-  ]
+    }]
   },
   {
     timestamps: true,
