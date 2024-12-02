@@ -77,99 +77,138 @@ const showAllRegisterForm = async (req, res) => {
 // Show all user and filter by role
 const showAllUser = async (req, res) => {
   try {
-    const { role, status, page = 1, limit = 10 } = req.query; // Default: page 1, 10 items per page
-    const skip = (page - 1) * limit; // Calculate how many documents to skip
-    
-    // check role Customer
-    if (role === "Customer") {
-      const roleDoc = await Role.findOne({ name: role });
-      const customers = await User.find({ 
-        isActive: status, 
-        role: { $elemMatch: { $eq: roleDoc._id } } 
-      })
-        .skip(skip)
-        .limit(parseInt(limit)); // Apply pagination
-      const total = await User.countDocuments({ 
-        isActive: status, 
-        role: { $elemMatch: { $eq: roleDoc._id } } 
-      }); // Total documents count
-      res.status(200).json({ 
-        total, 
-        page: parseInt(page), 
-        limit: parseInt(limit), 
-        customers 
-      });
-    } 
+    const { role, status } = req.query; // Lấy role và status từ query params
 
-    // check role Shop
-    else if (role === "Shop") {
-      const roleDoc = await Role.findOne({ name: role });
-      const shops = await User.find({ 
-        isActive: status, 
-        role: { $elemMatch: { $eq: roleDoc._id } } 
-      })
-        .skip(skip)
-        .limit(parseInt(limit)); // Apply pagination
-      const total = await User.countDocuments({ 
-        isActive: status, 
-        role: { $elemMatch: { $eq: roleDoc._id } } 
-      }); // Total documents count
-      res.status(200).json({ 
-        total, 
-        page: parseInt(page), 
-        limit: parseInt(limit), 
-        shops 
+    // Check role Customer
+    if (role === "Customer") {
+      const roleCustomer = await Role.findOne({ name: "Customer" });
+      const customers = await User.find({
+        role: roleCustomer._id, // Chỉ lấy các user có role là "Customer"
+        ...(status !== undefined && { isActive: status === "true" }) // Lọc theo status nếu có
+      }).populate({
+        path: "role", // Populate mảng role
+        select: "name", // Chỉ lấy trường name của role
       });
-    } 
-    // if user want to display all user
-    else {
-      const users = await User.find()
-        .skip(skip)
-        .limit(parseInt(limit)); // Apply pagination
-      const total = await User.countDocuments(); // Total documents count
-      res.status(200).json({ 
-        total, 
-        page: parseInt(page), 
-        limit: parseInt(limit), 
-        users 
+
+      const total = await User.countDocuments({
+        role: roleCustomer._id,
+        ...(status !== undefined && { isActive: status === "true" }),
+      });
+
+      return res.status(200).json({
+        total,
+        customers,
       });
     }
+
+    // Check role Shop
+    if (role === "Shop") {
+      const shops = await Shop.find({
+        ...(status !== undefined && { isActive: status === "true" }), // Lọc theo status nếu có
+      });
+
+      const total = await Shop.countDocuments({
+        ...(status !== undefined && { isActive: status === "true" }),
+      });
+
+      return res.status(200).json({
+        total,
+        shops,
+      });
+    }
+
+    // Nếu người dùng muốn hiển thị tất cả user (không phải Admin)
+    const roleCustomer = await Role.findOne({ name: "Customer" });
+    const roleShop = await Role.findOne({ name: "Shop" });
+
+    const users = await User.find({
+      role: { $in: [roleCustomer._id, roleShop._id] }, // Chỉ lấy user có role là "Customer" hoặc "Shop"
+      ...(status !== undefined && { isActive: status === "true" }), // Lọc theo status nếu có
+    }).populate({
+      path: "role",
+      select: "name", // Lấy tên role thay vì ID
+    });
+
+    const total = await User.countDocuments({
+      role: { $in: [roleCustomer._id, roleShop._id] },
+      ...(status !== undefined && { isActive: status === "true" }),
+    });
+
+    return res.status(200).json({
+      total,
+      users,
+    });
   } catch (error) {
+    console.error(error);
     res.status(500).send({ message: error.message });
   }
 };
 
+
 // active or deactive account
 const activeOrDeactive = async (req, res) => {
   try {
-    const { id, status,role } = req.query;
-   if (role === "Customer") {
-    const response = await User.findByIdAndUpdate(
+    const { id, status } = req.query;
+    console.log(id, status);
+    // Cập nhật trạng thái của user
+    const customer = await User.findByIdAndUpdate(
       id,
-      { isActive: status },
+      { isActive: status }, // Cập nhật trạng thái khóa/unlock
       { new: true }
     );
-    if (!response) {
-      return res.status(404).json({ message: "User not found" });
+
+    if (!customer) {
+      const shop = await Shop.findByIdAndUpdate(
+        id,
+        { isActive: status }, // Cập nhật trạng thái khóa/unlock
+        { new: true }
+      );
+      
+      if (!shop) {
+        return res.status(404).json({ message: "Shop not found" });
+      }
+      // Đảm bảo chỉ trả về một lần phản hồi
+      return res.status(200).json({ message: "Success", success: true });
     }
-    res.status(200).json({message: "Success", success: true});
-  }
-  
-  else if (role === "Shop") {
-    const response = await Shop.findByIdAndUpdate(
-      id,
-      { isActive: status },
-      { new: true }
-    );
-    if (!response) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    res.status(200).json({message: "Success", success: true});
-  }
+
+    // Đảm bảo chỉ trả về một lần phản hồi
+    return res.status(200).json({ message: "Success", success: true });
+
   } catch (error) {
-    res.status(500).send({ message: error.message });
+    console.error('Error updating status:', error);
+    return res.status(500).send({ message: error.message });
   }
-}
+};
+
+const searchAccount = async (req, res) => {
+  try {
+    const { keyword } = req.query;
+
+    // Tìm kiếm trong cả User và Shop
+    const users = await User.find({
+      $or: [
+        { userName: { $regex: keyword, $options: "i" } },
+        { email: { $regex: keyword, $options: "i" } },
+        { phoneNumber: { $regex: keyword, $options: "i" } },
+      ],
+    });
+
+    const shops = await Shop.find({
+      $or: [
+        { shopName: { $regex: keyword, $options: "i" } },
+        { shopEmail: { $regex: keyword, $options: "i" } },
+        { shopPhoneNumber: { $regex: keyword, $options: "i" } },
+      ],
+    });
+
+    // Kết hợp kết quả của User và Shop
+    return res.status(200).json({ users, shops });
+  } catch (error) {
+    console.error('Error searching users and shops:', error);
+    return res.status(500).send({ message: error.message });
+  }
+};
+
 
 
 // --------------------Withdraw Request--------------------
@@ -252,7 +291,8 @@ module.exports = {
   showAllRegisterForm,
   showAllUser,
   activeOrDeactive,
+  updateWithdrawRequest,
+  searchAccount,
   getAllWithdraws,
   getWithdrawById,
-  updateWithdrawRequest
 };

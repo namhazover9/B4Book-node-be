@@ -399,42 +399,53 @@ exports.updateOrderStatus = async (req, res) => {
 };
 
 
-exports.orderCancelledStatus = async (req, res) => {
+exports.searchOrder = async (req, res) => {
   try {
-    const { orderId } = req.params;
-    const order = await Order.findById(orderId);
-    if (!order) {
-      return res.status(404).json({
-        status: 'fail',
-        message: 'Order not found',
-      });
-    }
+    const keyword = req.query.keyword;
+    console.log("Search keyword:", keyword);
 
-    const retristedStatus = ['Confirmed', 'Shipped', 'Delivered'];
-    if(retristedStatus.includes(order.status)){
-      return res.status(400).json({
-        status: 'fail',
-        message: `Cannot cancel order with status ${order.status}`,
-      });
-    }
-
-    order.status = 'Cancelled';
-    await order.save();
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Order cancelled successfully',
-      data: order,
+    // Tìm order và lọc các user phù hợp bằng match
+    const orders = await Order.find().populate({
+      path: "customer",
+      select: "userName email phoneNumber",
+      match: {
+        $or: [
+          { userName: { $regex: keyword, $options: "i" } },
+          { email: { $regex: keyword, $options: "i" } },
+          { phoneNumber: { $regex: keyword, $options: "i" } },
+        ],
+      },
     });
+
+    // Lọc ra các orders có customer phù hợp
+    const filteredOrders = orders.filter(order => order.customer);
+
+    console.log("Filtered orders:", filteredOrders);
+
+    if (filteredOrders.length === 0) {
+      return res.status(404).json({ message: "No orders found." });
+    }
+
+    // Định dạng lại dữ liệu để trả về giống với getAllOrderByShop
+    const formattedOrders = filteredOrders.map((order, index) => ({
+      key: index + 1,
+      id: order._id,
+      name: order.customer?.userName || 'Unknown',
+      email: order.customer?.email || 'N/A',
+      phoneNumber: order.customer?.phoneNumber || 'N/A',
+      status: order.status || 'Unknown',
+      totalPrice: `$${order.totalOrderPrice || 0}`,
+    }));
+
+    res.status(200).json({ success: true, orders: formattedOrders });
   } catch (error) {
-    console.error('Error retrieving order by ID:', error.message);
-    res.status(500).json({
-      status: 'error',
-      message: 'Something went wrong when update order status',
-      error: error.message,
-    });
+    console.error("Error searching orders:", error);
+    res.status(500).json({ success: false, message: "Server Error", error });
   }
 };
+
+
+
 // ------------------------------------
 
 // @desc    Create Stripe Checkout Session

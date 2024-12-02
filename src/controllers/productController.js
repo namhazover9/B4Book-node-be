@@ -116,7 +116,6 @@ exports.createProduct = async (req, res) => {
       ISBN,
       language,
       stock,
-
     } = req.body;
 
     const images = req.files.map((file) => file.path); // Lấy URL từ Cloudinary
