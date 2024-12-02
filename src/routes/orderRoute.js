@@ -7,6 +7,7 @@ const { isShop, isAuth } = require("../middlewares/auth");
 router.get("/by-status", isAuth, OrderController.getAllOrdersByStatus);
 router.get("/getAllOrderByShop/:id", isShop, OrderController.getAllOrderByShop);
 router.get('/cart-data', isAuth, OrderController.getCartForOrder);
+router.get("/search",isShop, OrderController.searchOrder);
 router.get("/vnpay-return", OrderController.vnpayReturn);
 router.get("/customer/:id", isAuth, OrderController.getCustomerOrders);
 router.get("/:orderId", isAuth, OrderController.getOrderById);
