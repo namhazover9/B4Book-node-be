@@ -63,34 +63,15 @@ const isShop = async (req, res, next) => {
         status: "ERROR",
       });
     }
-
+    
     const decode = jwt.verify(token, process.env.ACCESS_TOKEN); // Giải mã token
-    // const roleCustomer = await Role.findOne({ name: "Customer" }); // Tìm role "Customer"
-
-    // if (!roleCustomer) {
-    //   return res.status(404).json({
-    //     message: "Role 'Customer' not found",
-    //     status: "ERROR",
-    //   });
-    // }
-
-    req.user = await Shop.findById(decode.sub.accountId); // Tìm user dựa trên decode từ token
+    req.user = await Shop.findOne({user:decode.sub.accountId}); // Tìm user dựa trên decode từ token
     if (!req.user) {
       return res.status(404).json({
         message: "Shop not found",
         status: "ERROR",
       });
     }
-
-    // // Kiểm tra nếu roleCustomer._id có trong mảng role của user
-    // const hasCustomerRole = req.user.role.some(roleId => roleId.toString() === roleCustomer._id.toString());
-    // if (!hasCustomerRole) {
-    //   return res.status(403).json({
-    //     message: "You are not authorized as a Customer",
-    //     status: "ERROR",
-    //   });
-    // }
-
     next(); // Nếu hợp lệ, chuyển tiếp sang middleware tiếp theo
   } catch (error) {
     res.status(500).json({
