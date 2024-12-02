@@ -225,6 +225,54 @@ exports.getAllOrdersByStatus = async (req, res) => {
   }
 };
 
+exports.getAllOrderByShop = async (req, res) => {
+  try {
+    const shopId = req.params.id;
+    const status = req.query.status;
+
+    // Xây dựng bộ lọc trạng thái
+    let statusFilter = {};
+
+    // Kiểm tra giá trị status và xử lý
+    if (status && status !== "default") { // Kiểm tra nếu status không phải "default"
+      switch (status) {
+        case "Pending":
+        case "Confirmed":
+        case "Shipped":
+        case "Delivered":
+        case "Cancelled":
+          statusFilter.status = status;
+          break;
+        default:
+          return res.status(400).json({ message: "Invalid status value." });
+      }
+    }
+
+    // Lọc các đơn hàng từ database
+    const orders = await Order.find({
+      "shops.shopId": shopId, // Lọc các shop có shopId phù hợp
+      ...statusFilter, // Thêm bộ lọc trạng thái nếu có
+    })
+      .populate({
+        path: "shops.orderItems.product", // Lấy thông tin chi tiết sản phẩm
+        select: "name price images", // Các trường cần lấy của sản phẩm
+      })
+      .populate({
+        path: "customer", // Lấy thông tin chi tiết khách hàng
+        select: "userName email phoneNumber", // Các trường cần lấy của khách hàng
+      })
+      .sort({ createdAt: -1 }); // Sắp xếp đơn hàng mới nhất ở trên cùng
+
+    if (!orders || orders.length === 0) {
+      return res.status(404).json({ message: "No orders found for this shop." });
+    }
+    res.status(200).json({ success: true, orders });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Server Error", error });
+  }
+};
+
 // ---------Update Order Status---------
 exports.orderConfirmedStatus = async (req, res) => {
   try {
@@ -302,52 +350,51 @@ exports.orderDeliveredStatus = async (req, res) => {
     });
   }
 };
-=======
-exports.getAllOrderByShop = async (req, res) => {
+
+
+exports.updateOrderStatus = async (req, res) => {
   try {
-    const shopId = req.params.id;
-    const status = req.query.status;
+    const { orderId, status } = req.params;
 
-    // Xây dựng bộ lọc trạng thái
-    let statusFilter = {};
-
-    // Kiểm tra giá trị status và xử lý
-    if (status && status !== "default") { // Kiểm tra nếu status không phải "default"
-      switch (status) {
-        case "Pending":
-        case "Confirmed":
-        case "Shipped":
-        case "Delivered":
-        case "Cancelled":
-          statusFilter.status = status;
-          break;
-        default:
-          return res.status(400).json({ message: "Invalid status value." });
-      }
+    // Kiểm tra tính hợp lệ của trạng thái
+    if (!['Confirmed', 'Shipped', 'Delivered'].includes(status)) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Invalid status provided',
+      });
     }
 
-    // Lọc các đơn hàng từ database
-    const orders = await Order.find({
-      "shops.shopId": shopId, // Lọc các shop có shopId phù hợp
-      ...statusFilter, // Thêm bộ lọc trạng thái nếu có
-    })
-      .populate({
-        path: "shops.orderItems.product", // Lấy thông tin chi tiết sản phẩm
-        select: "name price images", // Các trường cần lấy của sản phẩm
-      })
-      .populate({
-        path: "customer", // Lấy thông tin chi tiết khách hàng
-        select: "userName email phoneNumber", // Các trường cần lấy của khách hàng
-      })
-      .sort({ createdAt: -1 }); // Sắp xếp đơn hàng mới nhất ở trên cùng
+    const updateFields = { status };
 
-    if (!orders || orders.length === 0) {
-      return res.status(404).json({ message: "No orders found for this shop." });
+    // Thêm các thuộc tính bổ sung tùy vào trạng thái
+    if (status === 'Shipped') {
+      updateFields.shippedDate = new Date();
     }
-    res.status(200).json({ success: true, orders });
+    if (status === 'Delivered') {
+      updateFields.deliveredDate = new Date();
+    }
+
+    const order = await Order.findByIdAndUpdate(orderId, updateFields, { new: true });
+
+    if (!order) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Order not found',
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: `Order status updated to ${status}`,
+      data: order,
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: "Server Error", error });
+    console.error('Error updating order status:', error.message);
+    res.status(500).json({
+      status: 'error',
+      message: 'Something went wrong while updating order status',
+      error: error.message,
+    });
   }
 };
 
@@ -552,7 +599,8 @@ exports.orderCancelledStatus = async (req, res) => {
 // @access  Private/Customer
 exports.createVNpay =  async (req, res) => {
 try {
-    const { shops, shippingAddress, paymentMethod, customerId } = req.body;
+    const { shops, shippingAddress, paymentMethod } = req.body;
+    const customerId = req.user._id;
 
     if (!shops || shops.length === 0) {
       return res.status(400).json({
@@ -560,7 +608,7 @@ try {
         message: 'Shops cannot be empty',
       });
     }
-
+    console.log(shops.shopId);
     let totalOrderPrice = 0;
     const orderItems = [];
 

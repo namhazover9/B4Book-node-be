@@ -246,9 +246,8 @@ const switchCustomer = async (req, res) => {
   }
 };
 
-// @desc    Create a withdraw request
-// @route   POST /withdraw
-// @access  Private/Shop
+// ------------------------Withdraw Request------------------------
+
 const createWithdrawRequest = async (req, res) => {
   const { amount } = req.body; // Lấy số tiền từ body
 
@@ -282,6 +281,25 @@ const createWithdrawRequest = async (req, res) => {
   }
 };
 
+const getWithdrawsByShopId = async (req, res) => {
+  try {
+    // Lấy shopId từ thông tin user đã đăng nhập
+    const userId = req.user._id;
+    const shop = await Shop.findOne({ _id: userId });
+    if (!shop) {
+      return res.status(404).json({ message: "Shop not found" });
+    }
+
+    // Lấy tất cả yêu cầu rút tiền của Shop
+    const withdrawRequests = await WithdrawRequest.find({ shop: shop._id })
+      .populate("shop", "shopName shopEmail") // Thêm thông tin Shop
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ withdrawRequests });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error", error });
+  }
+};
 
 
 
@@ -299,5 +317,5 @@ module.exports = {
   updateShopInfo,
   switchCustomer,
   createWithdrawRequest,
-  updateWithdrawRequest
+  getWithdrawsByShopId
 };
