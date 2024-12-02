@@ -234,7 +234,7 @@ exports.getAllOrderByShop = async (req, res) => {
     let statusFilter = {};
 
     // Kiểm tra giá trị status và xử lý
-    if (status && status !== "default") { // Kiểm tra nếu status không phải "default"
+    if (status && status !== "All Orders") { // Kiểm tra nếu status không phải "default"
       switch (status) {
         case "Pending":
         case "Confirmed":
