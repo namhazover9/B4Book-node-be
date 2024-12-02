@@ -171,6 +171,43 @@ const activeOrDeactive = async (req, res) => {
   }
 }
 
+
+// --------------------Withdraw Request--------------------
+
+const getAllWithdraws = async (req, res) => {
+  try {
+    // Lấy tất cả yêu cầu rút tiền và thông tin Shop liên quan
+    const withdrawRequests = await WithdrawRequest.find()
+      .populate("shop", "shopName shopEmail") // Lấy các thuộc tính cần thiết từ Shop
+      .sort({ createdAt: -1 }); // Sắp xếp từ mới nhất đến cũ nhất
+
+    res.status(200).json({ withdrawRequests });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error", error });
+  }
+};
+
+const getWithdrawById = async (req, res) => {
+  const { requestId } = req.params;
+
+  try {
+    // Tìm yêu cầu rút tiền theo requestId
+    const withdrawRequest = await WithdrawRequest.findById(requestId).populate(
+      "shop",
+      "shopName shopEmail"
+    );
+
+    if (!withdrawRequest) {
+      return res.status(404).json({ message: "Withdraw request not found" });
+    }
+
+    res.status(200).json({ withdrawRequest });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error", error });
+  }
+};
+
+
 const updateWithdrawRequest = async (req, res) => {
   const { requestId, status } = req.body;
 
@@ -215,5 +252,7 @@ module.exports = {
   showAllRegisterForm,
   showAllUser,
   activeOrDeactive,
+  getAllWithdraws,
+  getWithdrawById,
   updateWithdrawRequest
 };
