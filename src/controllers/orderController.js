@@ -262,7 +262,6 @@ exports.orderShippedStatus = async (req, res) => {
         message: 'Order not found',
       });
     }
-
     res.status(200).json({
       status: 'success',
       message: 'Order updated successfully',
@@ -303,6 +302,55 @@ exports.orderDeliveredStatus = async (req, res) => {
     });
   }
 };
+=======
+exports.getAllOrderByShop = async (req, res) => {
+  try {
+    const shopId = req.params.id;
+    const status = req.query.status;
+
+    // Xây dựng bộ lọc trạng thái
+    let statusFilter = {};
+
+    // Kiểm tra giá trị status và xử lý
+    if (status && status !== "default") { // Kiểm tra nếu status không phải "default"
+      switch (status) {
+        case "Pending":
+        case "Confirmed":
+        case "Shipped":
+        case "Delivered":
+        case "Cancelled":
+          statusFilter.status = status;
+          break;
+        default:
+          return res.status(400).json({ message: "Invalid status value." });
+      }
+    }
+
+    // Lọc các đơn hàng từ database
+    const orders = await Order.find({
+      "shops.shopId": shopId, // Lọc các shop có shopId phù hợp
+      ...statusFilter, // Thêm bộ lọc trạng thái nếu có
+    })
+      .populate({
+        path: "shops.orderItems.product", // Lấy thông tin chi tiết sản phẩm
+        select: "name price images", // Các trường cần lấy của sản phẩm
+      })
+      .populate({
+        path: "customer", // Lấy thông tin chi tiết khách hàng
+        select: "userName email phoneNumber", // Các trường cần lấy của khách hàng
+      })
+      .sort({ createdAt: -1 }); // Sắp xếp đơn hàng mới nhất ở trên cùng
+
+    if (!orders || orders.length === 0) {
+      return res.status(404).json({ message: "No orders found for this shop." });
+    }
+    res.status(200).json({ success: true, orders });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Server Error", error });
+  }
+};
+
 
 exports.orderCancelledStatus = async (req, res) => {
   try {

@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 const WishlistProduct = require("../models/wishlistProduct");
 const Product = require("../models/product");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const { sendMail } = require("../middlewares/sendEmailPassword");
 const { generateRandomCode } = require("../middlewares/generateCode");
 const { data } = require("jquery");
@@ -382,24 +382,30 @@ const deleteWishlistProduct = async (req, res) => {
 const updateProfileUser = async (req, res) => {
   try {
     const updates = req.body;
-    //check if password is provided
-    if(updates.passWord){
-      // hash password
-      const hash = await bcrypt.hash(updates.passWord, 10);
-      // update password
-      updates.passWord = hash
+    const userPass = await User.findById(req.user._id );
+    // Kiểm tra xem passWord có giá trị hợp lệ hay không
+    if (updates.passWord !== userPass.passWord) {
+      
+      // Hash password nếu passWord được cung cấp
+      const hash = await bcrypt.hash(updates.passWord,parseInt(process.env.SALT_ROUND));
+      updates.passWord = hash;
+    } else {
+      // Xóa passWord nếu không muốn cập nhật nó
+      delete updates.passWord;
     }
-    // find user by id and update it
-    const user = await User.findOneAndUpdate(req.user, updates, {
+
+    // Tìm user và cập nhật
+    const user = await User.findOneAndUpdate(req.user._id, updates, {
       new: true,
     });
-    
+
     if (!user) throw new Error("User not found");
     res.status(200).json({ message: "User updated successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-}
+};
+
 
 const showDetailShop = async (req, res) => {
   try {
@@ -414,7 +420,6 @@ const showDetailShop = async (req, res) => {
     const products = await Product.find({ shopId: shop._id })
       .sort({ salesNumber: -1 }) // Sắp xếp giảm dần theo salesNumber
       .limit(10); // Giới hạn 10 sản phẩm
-    console.log(products)
     // Trả về thông tin shop và danh sách sản phẩm best seller
     res.json({ shop, bestSellers: products });
   } catch (error) {
