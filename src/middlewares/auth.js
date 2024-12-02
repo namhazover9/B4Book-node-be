@@ -8,7 +8,6 @@ dotenv.config();
 // Check role, only admin can use function belong in admin
 const isAdmin = async (req, res, next) => {
   try {
-    console.log("Checktoken:", req.headers.token);
     const token = req.headers.token?.split(" ")[1]; // Trích xuất token từ headers
     if (!token) {
       return res.status(401).json({

@@ -1,6 +1,7 @@
 const { generateRandomCode } = require("../middlewares/generateCode");
 const Shop = require("../models/shop");
 const Voucher = require("../models/voucher");
+const WithdrawRequest = require("../models/withdrawRequest");
 
 // Create voucher
 const createVoucher = async (req, res) => {
@@ -201,11 +202,12 @@ const updateShopInfo = async (req, res) => {
       shopName,
       shopAddress,
       phoneNumber,
+      wallet,
     } = req.body;
 
     const images = req.files?.map((file) => file.path) || []; // Lấy URL nếu có file mới
 
-    const shop = await Shop.findById(req.user._id );
+    const shop = await Shop.findById(req.user._id);
     if (!shop) {
       return res.status(404).send({ message: "Shop not found" });
     }
@@ -215,6 +217,7 @@ const updateShopInfo = async (req, res) => {
     shop.shopName = shopName || shop.shopName;
     shop.shopAddress = shopAddress || shop.shopAddress;
     shop.phoneNumber = phoneNumber || shop.phoneNumber;
+    shop.wallet = wallet || shop.wallet;
     shop.images = images || shop.images;
 
     // Thêm hình ảnh mới nếu có
@@ -243,6 +246,43 @@ const switchCustomer = async (req, res) => {
   }
 };
 
+// @desc    Create a withdraw request
+// @route   POST /withdraw
+// @access  Private/Shop
+const createWithdrawRequest = async (req, res) => {
+  const { amount } = req.body; // Lấy số tiền từ body
+
+  try {
+    // Tìm Shop dựa trên userId
+    const shop = await Shop.findById(req.user._id);
+    if (!shop) {
+      return res.status(404).json({ message: "Shop not found" });
+    }
+
+    // Kiểm tra số dư ví
+    if (shop.wallet < amount) {
+      return res.status(400).json({ message: "Insufficient wallet balance" });
+    }
+
+    // Tạo yêu cầu rút tiền
+    const withdrawRequest = new WithdrawRequest({
+      shop: shop._id,
+      amount,
+    });
+
+    await withdrawRequest.save();
+
+    // Trừ số tiền tạm thời
+    shop.wallet -= amount;
+    await shop.save();
+
+    res.status(201).json({ message: "Withdraw request created", withdrawRequest });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error", error });
+  }
+};
+
+
 module.exports = {
    createVoucher,
   getValueVoucher,
@@ -253,5 +293,6 @@ module.exports = {
   searchShop,
   getAllShop,
   updateShopInfo,
-  switchCustomer
+  switchCustomer,
+  createWithdrawRequest,
 };

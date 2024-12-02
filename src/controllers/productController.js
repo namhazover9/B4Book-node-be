@@ -116,12 +116,11 @@ exports.createProduct = async (req, res) => {
       ISBN,
       language,
       stock,
-      isApproved,
-      isDeleted,
     } = req.body;
 
     const images = req.files.map((file) => file.path); // Lấy URL từ Cloudinary
     const shopId = req.user._id
+    console.log("11111111",shopId)
     const product = new Product({
       title,
       category,
@@ -132,8 +131,8 @@ exports.createProduct = async (req, res) => {
       ISBN,
       language,
       stock,
-      isApproved,
-      isDeleted,
+      isApproved : false,
+      isDeleted : false,
       shopId:shopId,
       images,
     });

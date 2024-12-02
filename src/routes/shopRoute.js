@@ -10,7 +10,7 @@ router.get("/getAllVoucher", shop.getAllVoucher);
 router.put("/activeorDeactiveVoucher", shop.activeOrDeactiveVoucher);
 router.put("/deleteVoucher/:id",isShop, shop.deleteVoucher);
 router.put("/updateVoucher/:id",isShop, shop.updateVoucher);
-router.put("/updateShopInfo", upload.array("images", 1),isShop, shop.updateShopInfo);
+router.put("/updateShopInfo", upload.array("images", 1), isShop, shop.updateShopInfo);
 router.get("/", shop.getAllShop);
 router.get("/:id", shop.getValueVoucher);
 
