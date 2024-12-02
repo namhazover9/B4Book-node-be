@@ -288,7 +288,8 @@ const registerShop = async (req, res) => {
           images,
           isActive: false,
           isApproved: false,
-          user: req.headers['id']
+          wallet: 0,
+          user: req.req.user._id 
       });
       //  else if(!isCheckEmail){
       //       return res.status(400).send({ message: "Email is not valid" });

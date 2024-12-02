@@ -9,6 +9,7 @@ const shopSchema = new mongoose.Schema(
     isActive: { type: Boolean, required: true },
     isApproved:{ type: Boolean, required: true },
     images: [{ type: String}],
+    wallet: { type: Number, default: 0},
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   {

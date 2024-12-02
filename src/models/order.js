@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+
 const orderSchema = new mongoose.Schema(
   {
     customer: {
@@ -17,10 +18,10 @@ const orderSchema = new mongoose.Schema(
         orderItems: [
           {
             product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-            // title: { type: String, required: true },
+            title: { type: String, required: true },
             quantity: { type: Number, required: true },
-            // price: { type: Number, required: true }, 
-            // images: [{ type: String, required: true }],
+            price: { type: Number, required: true }, 
+            images: [{ type: String, required: true }],
           },
         ],
         shippingMethod: {
@@ -28,7 +29,7 @@ const orderSchema = new mongoose.Schema(
           enum: ['Standard', 'Express'],
           required: true,
         },
-        shippingCost: { type: Number, default: 0 },
+        shippingCost: { type: Number, required: true},
         voucherDiscount: { type: mongoose.Schema.Types.ObjectId, ref: 'Voucher'},
         totalShopPrice: { type: Number},
       },
@@ -45,6 +46,8 @@ const orderSchema = new mongoose.Schema(
     totalOrderPrice: { type: Number, required: true }, // Tổng giá trị đơn hàng (bao gồm phí vận chuyển)
     isPaid: { type: Boolean, default: false },
     paidAt: { type: Date },
+    shippedDate: { type: Date, default: null },
+    deliveredDate: { type: Date, default: null },
     status: {
       type: String,
       enum: ['Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'],

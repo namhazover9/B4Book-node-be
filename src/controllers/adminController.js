@@ -1,6 +1,7 @@
 const Role = require("../models/role");
 const Shop = require("../models/shop");
 const User = require("../models/user");
+const WithdrawRequest = require("../models/withdrawRequest");
 
 // function approve register form become a seller from user
 const approvedShop = async (req, res) => {
@@ -170,4 +171,49 @@ const activeOrDeactive = async (req, res) => {
   }
 }
 
-module.exports = { approvedShop, showAllRegisterForm, showAllUser, activeOrDeactive };
+const updateWithdrawRequest = async (req, res) => {
+  const { requestId, status } = req.body;
+
+  try {
+    // Tìm yêu cầu rút tiền
+    const withdrawRequest = await WithdrawRequest.findById(requestId).populate("shop");
+    if (!withdrawRequest) {
+      return res.status(404).json({ message: "Withdraw request not found" });
+    }
+
+    // Kiểm tra trạng thái hiện tại
+    if (withdrawRequest.status !== "Pending") {
+      return res.status(400).json({ message: "Request has already been processed" });
+    }
+
+    // Cập nhật trạng thái
+    withdrawRequest.status = status;
+    withdrawRequest.processedAt = new Date();
+
+    // Nếu yêu cầu bị từ chối, hoàn lại tiền vào ví Shop
+    if (status === "Rejected") {
+      const shop = withdrawRequest.shop;
+      if (!shop) {
+        return res.status(404).json({ message: "Associated shop not found" });
+      }
+
+      shop.wallet += withdrawRequest.amount;
+      await shop.save();
+    }
+
+    await withdrawRequest.save();
+
+    res.status(200).json({ message: "Withdraw request updated successfully", withdrawRequest });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error", error });
+  }
+};
+
+
+module.exports = { 
+  approvedShop,
+  showAllRegisterForm,
+  showAllUser,
+  activeOrDeactive,
+  updateWithdrawRequest
+};

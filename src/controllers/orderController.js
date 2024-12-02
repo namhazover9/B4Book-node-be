@@ -1,14 +1,15 @@
 const Order = require('../models/order');
 const Product = require('../models/product');
 const Cart = require('../models/shoppingCart');
+const Voucher = require('../models/voucher');
+const Shop = require('../models/shop');
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); // Replace with your Stripe secret key
-const crypto = require('crypto');
-const querystring = require('querystring');
+//const crypto = require('crypto');
+//const querystring = require('querystring');
 const moment = require('moment');
-let $ = require('jquery');
-const request = require('request');
-
+// let $ = require('jquery');
+//const request = require('request');
 
 
 // @desc    Get cart data for order
@@ -98,8 +99,6 @@ exports.getCartForOrder = async (req, res) => {
   }
 };
 
-
-
 // @desc    Get All Orders of a Customer
 // @route   GET /customer/:id (id = customer ID)
 // @access  Private/Shop-Customer-Admin
@@ -154,6 +153,13 @@ exports.getOrderById = async (req, res) => {
         message: 'Order not found or does not belong to this customer',
       });
     }
+
+    const displayShippedDate = order.shippedDate ? order.shippedDate.toISOString() : "Not ship";
+    const displayDeliveredDate = order.deliveredDate ? order.deliveredDate.toISOString() : "Not deliver";
+
+    order.shippedDate = displayShippedDate;
+    order.deliveredDate = displayDeliveredDate;
+    await order.save();
 
     res.status(200).json({
       status: 'success',
@@ -219,7 +225,84 @@ exports.getAllOrdersByStatus = async (req, res) => {
   }
 };
 
+// ---------Update Order Status---------
+exports.orderConfirmedStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findByIdAndUpdate(orderId, { status: 'Confirmed' }, { new: true });
+    if (!order) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Order not found',
+      });
+    }
 
+    res.status(200).json({
+      status: 'success',
+      message: 'Order updated successfully',
+      data: order,
+    });
+  } catch (error) {
+    console.error('Error retrieving order by ID:', error.message);
+    res.status(500).json({
+      status: 'error',
+      message: 'Something went wrong when update order status',
+      error: error.message,
+    });
+  }
+};
+
+exports.orderShippedStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findByIdAndUpdate(orderId, { status: 'Shipped', shippedDate: new Date() }, { new: true });
+    if (!order) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Order not found',
+      });
+    }
+    res.status(200).json({
+      status: 'success',
+      message: 'Order updated successfully',
+      data: order,
+    });
+  } catch (error) {
+    console.error('Error retrieving order by ID:', error.message);
+    res.status(500).json({
+      status: 'error',
+      message: 'Something went wrong when update order status',
+      error: error.message,
+    });
+  }
+};
+
+exports.orderDeliveredStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findByIdAndUpdate(orderId, { status: 'Delivered', deliveredDate: new Date() }, { new: true });
+    if (!order) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Order not found',
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Order updated successfully',
+      data: order,
+    });
+  } catch (error) {
+    console.error('Error retrieving order by ID:', error.message);
+    res.status(500).json({
+      status: 'error',
+      message: 'Something went wrong when update order status',
+      error: error.message,
+    });
+  }
+};
+=======
 exports.getAllOrderByShop = async (req, res) => {
   try {
     const shopId = req.params.id;
@@ -269,11 +352,43 @@ exports.getAllOrderByShop = async (req, res) => {
 };
 
 
+exports.orderCancelledStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Order not found',
+      });
+    }
 
+    const retristedStatus = ['Confirmed', 'Shipped', 'Delivered'];
+    if(retristedStatus.includes(order.status)){
+      return res.status(400).json({
+        status: 'fail',
+        message: `Cannot cancel order with status ${order.status}`,
+      });
+    }
 
+    order.status = 'Cancelled';
+    await order.save();
 
-
-
+    res.status(200).json({
+      status: 'success',
+      message: 'Order cancelled successfully',
+      data: order,
+    });
+  } catch (error) {
+    console.error('Error retrieving order by ID:', error.message);
+    res.status(500).json({
+      status: 'error',
+      message: 'Something went wrong when update order status',
+      error: error.message,
+    });
+  }
+};
+// ------------------------------------
 
 // @desc    Create Stripe Checkout Session
 // @route   POST /order/place-order
@@ -433,9 +548,9 @@ exports.getAllOrderByShop = async (req, res) => {
 
 
 // @desc    Create VNPAY Checkout Session
-// @route   POST /order/place-order
+// @route   POST /order/place-order_vn
 // @access  Private/Customer
-exports.createVNpay =  async (req, res, next) => {
+exports.createVNpay =  async (req, res) => {
 try {
     const { shops, shippingAddress, paymentMethod, customerId } = req.body;
 
@@ -449,15 +564,9 @@ try {
     let totalOrderPrice = 0;
     const orderItems = [];
 
-    const orderData = {
-      customer:req.user._id , // ID của khách hàng hiện tại
-      shops: [],
-      shippingAddress,
-      paymentMethod,
-    };
-
     // Duyệt qua từng shop để tạo danh sách đơn hàng
     for (const shop of shops) {
+      let shopTotalPrice = 0;
       for (const item of shop.orderItems) {
         const product = await Product.findById(item.product);
         if (!product || product.stock < item.quantity) {
@@ -468,20 +577,59 @@ try {
         }
 
         const itemTotal = product.price * item.quantity;
-        totalOrderPrice += itemTotal;
+        shopTotalPrice += itemTotal;
 
         orderItems.push({
           product: product._id,
           title: product.title,
           price: product.price,
           quantity: item.quantity,
+          images: product.images,
         });
       }
+
+      const randomShippingCost = () => Math.floor(Math.random() * (8 - 4 + 1)) + 4;
+      // Cộng phí vận chuyển
+      shop.shippingCost = randomShippingCost();
+      const shippingCost = shop.shippingCost;
+      console.log(shippingCost);
+      shopTotalPrice += shippingCost;
+
+      const voucherDiscount = shop.voucherDiscount || 0;
+      
+      // Xử lý voucherDiscount (nếu có)
+      if (voucherDiscount) {
+        const voucher = await Voucher.findById(voucherDiscount);
+        if (!voucher) {
+          return res.status(400).json({
+            status: 'fail',
+            message: `Invalid voucher for shop: ${shop.shopId}`,
+          });
+        }
+
+        // Kiểm tra hiệu lực của voucher
+        const now = new Date();
+        if (!voucher.isActive || voucher.expired < now || voucher.validDate > now) {
+          return res.status(400).json({
+            status: 'fail',
+            message: `Voucher is expired or not valid yet: ${voucher.code}`,
+          });
+        }
+
+        // Tính giá trị giảm giá
+        const discountValue = (shopTotalPrice * voucher.value) / 100;
+        shopTotalPrice -= discountValue;
+      }
+
+      // Đảm bảo tổng giá không âm
+      shopTotalPrice = Math.max(shopTotalPrice, 0);
+
+      shop.totalShopPrice = shopTotalPrice;
+      
+      totalOrderPrice += shop.totalShopPrice;
     }  
 
-    
     if (paymentMethod === 'VNPAY') {
-
       // Create the order
       const order = await Order.create({
         customer: customerId,
@@ -496,25 +644,21 @@ try {
       
       let date = new Date();
       let createDate = moment(date).format('YYYYMMDDHHmmss');
-      
       let ipAddr = req.headers['x-forwarded-for'] ||
           req.connection.remoteAddress ||
           req.socket.remoteAddress ||
           req.connection.socket.remoteAddress;
-
-      // let config = require('config');
-      
+     
       let tmnCode = "AL7AF468";
       let secretKey = "8E2BMWQA53PTVWZV7QR1KK1RO01KPK2F";
       let vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
       let returnUrl = "http://localhost:8000/order/vnpay-return";
       let orderInfo = moment(date).format('DDHHmmss');
-      //let amount = req.body.amount;
       let bankCode = 'VNBANK';
       let orderId = order._id;
-
       let locale = 'vn';
       let currCode = 'VND';
+
       let vnp_Params = {};
       vnp_Params['vnp_Version'] = '2.1.0';
       vnp_Params['vnp_Command'] = 'pay';
@@ -530,7 +674,6 @@ try {
       vnp_Params['vnp_CreateDate'] = createDate;      
       vnp_Params['vnp_BankCode'] = bankCode;
       
-
       vnp_Params = sortObject(vnp_Params);
 
       let querystring = require('qs');
@@ -541,7 +684,6 @@ try {
       vnp_Params['vnp_SecureHash'] = signed;
       vnpUrl += '?' + querystring.stringify(vnp_Params, { encode: false });
 
-       
       return res.status(200).json({
         status: 'success',
         message: 'VNPAY payment URL generated',
@@ -559,7 +701,9 @@ try {
   }
 };
 
-
+// @desc    Return Success/Fail from VNPAY
+// @route   GET /order/vnpay-return
+// @access  Private/Customer
 exports.vnpayReturn = async (req, res) => {
   try {
     let vnp_Params = req.query;
@@ -580,14 +724,40 @@ exports.vnpayReturn = async (req, res) => {
     let orderId = vnp_Params['vnp_TxnRef'];
    
     if(secureHash === signed){
-      let order = await Order.findOne({ _id: orderId });
+      
+      let order = await Order.findOne({ _id: orderId }).populate('shops.orderItems.product');
 
       if (!order) {
         return res.status(404).json({code: '01', message: 'Order not found' });
       }
       
+      // Update order status
       order.isPaid = true;
+      order.paidAt = new Date();
+      
       await order.save();
+
+      // Update stock and sales of products
+      for(const shop of order.shops){
+        for(const item of shop.orderItems){
+          const product = await Product.findById(item.product._id);
+
+          if(product){
+            product.stock -= item.quantity;
+            product.salesNumber += item.quantity;
+            await product.save();
+          }
+        }
+
+        const shopDoc = await Shop.findById(shop.shopId._id);
+        if (shopDoc) {
+          shopDoc.wallet = (shopDoc.wallet || 0) + shop.totalShopPrice; // Cộng thêm tổng giá trị shop
+          await shopDoc.save();
+        }
+      }
+
+      await Cart.findOneAndUpdate({ user: order.customer }, { cartItems: [] });
+
       return res.status(200).json({
         code: vnp_Params['vnp_ResponseCode'],
         message: 'Transaction verified successfully',
@@ -599,13 +769,11 @@ exports.vnpayReturn = async (req, res) => {
     });
     }
     
-
   } catch (error) {
     console.error('VNPAY return error:', error.message);
     res.status(500).json({ status: 'error', message: 'Something went wrong', error: error.message });
   }
 };
-
 
 function sortObject(obj) {
   let sorted = {};
