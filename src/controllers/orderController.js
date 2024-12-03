@@ -225,83 +225,6 @@ exports.getAllOrdersByStatus = async (req, res) => {
   }
 };
 
-// ---------Update Order Status---------
-exports.orderConfirmedStatus = async (req, res) => {
-  try {
-    const { orderId } = req.params;
-    const order = await Order.findByIdAndUpdate(orderId, { status: 'Confirmed' }, { new: true });
-    if (!order) {
-      return res.status(404).json({
-        status: 'fail',
-        message: 'Order not found',
-      });
-    }
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Order updated successfully',
-      data: order,
-    });
-  } catch (error) {
-    console.error('Error retrieving order by ID:', error.message);
-    res.status(500).json({
-      status: 'error',
-      message: 'Something went wrong when update order status',
-      error: error.message,
-    });
-  }
-};
-
-exports.orderShippedStatus = async (req, res) => {
-  try {
-    const { orderId } = req.params;
-    const order = await Order.findByIdAndUpdate(orderId, { status: 'Shipped', shippedDate: new Date() }, { new: true });
-    if (!order) {
-      return res.status(404).json({
-        status: 'fail',
-        message: 'Order not found',
-      });
-    }
-    res.status(200).json({
-      status: 'success',
-      message: 'Order updated successfully',
-      data: order,
-    });
-  } catch (error) {
-    console.error('Error retrieving order by ID:', error.message);
-    res.status(500).json({
-      status: 'error',
-      message: 'Something went wrong when update order status',
-      error: error.message,
-    });
-  }
-};
-
-exports.orderDeliveredStatus = async (req, res) => {
-  try {
-    const { orderId } = req.params;
-    const order = await Order.findByIdAndUpdate(orderId, { status: 'Delivered', deliveredDate: new Date() }, { new: true });
-    if (!order) {
-      return res.status(404).json({
-        status: 'fail',
-        message: 'Order not found',
-      });
-    }
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Order updated successfully',
-      data: order,
-    });
-  } catch (error) {
-    console.error('Error retrieving order by ID:', error.message);
-    res.status(500).json({
-      status: 'error',
-      message: 'Something went wrong when update order status',
-      error: error.message,
-    });
-  }
-};
 exports.getAllOrderByShop = async (req, res) => {
   try {
     const shopId = req.params.id;
@@ -311,7 +234,7 @@ exports.getAllOrderByShop = async (req, res) => {
     let statusFilter = {};
 
     // Kiểm tra giá trị status và xử lý
-    if (status && status !== "default") { // Kiểm tra nếu status không phải "default"
+    if (status && status !== "All Orders") { // Kiểm tra nếu status không phải "default"
       switch (status) {
         case "Pending":
         case "Confirmed":
@@ -351,7 +274,72 @@ exports.getAllOrderByShop = async (req, res) => {
 };
 
 
-exports.orderCancelledStatus = async (req, res) => {
+
+
+// @desc    Update Order Status 
+// @route   PATCH /:orderId/status
+// @access  Private/Shop
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Order not found',
+      });
+    }
+
+    // Xác định trạng thái tiếp theo
+    let nextStatus;
+    if (order.status === 'Pending') {
+      nextStatus = 'Confirmed';
+    } else if (order.status === 'Confirmed') {
+      nextStatus = 'Shipped';
+    } else if (order.status === 'Shipped') {
+      nextStatus = 'Delivered';
+    } else if (order.status === 'Delivered') {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Order already delivered',
+      });
+    }
+
+    const updateFields = { status: nextStatus };
+
+    // Thêm thuộc tính ngày cho các trạng thái cụ thể
+    if (nextStatus === 'Shipped') {
+      updateFields.shippedDate = new Date();
+    }
+    if (nextStatus === 'Delivered') {
+      updateFields.deliveredDate = new Date();
+    }
+
+    const updatedOrder = await Order.findByIdAndUpdate(orderId, updateFields, { new: true });
+
+    res.status(200).json({
+      status: 'success',
+      message: `Order status updated to ${nextStatus}`,
+      data: updatedOrder,
+    });
+  } catch (error) {
+    console.error('Error updating order status:', error.message);
+    res.status(500).json({
+      status: 'error',
+      message: 'Something went wrong while updating order status',
+      error: error.message,
+    });
+  }
+};
+
+
+3
+// @desc    Cancel Order
+// @route   PATCH /:orderId/cancel
+// @access  Private/Shop-Customer
+exports.cancelOrder= async (req, res) => {
   try {
     const { orderId } = req.params;
     const order = await Order.findById(orderId);
@@ -387,6 +375,54 @@ exports.orderCancelledStatus = async (req, res) => {
     });
   }
 };
+
+exports.searchOrder = async (req, res) => {
+  try {
+    const keyword = req.query.keyword;
+    console.log("Search keyword:", keyword);
+
+    // Tìm order và lọc các user phù hợp bằng match
+    const orders = await Order.find().populate({
+      path: "customer",
+      select: "userName email phoneNumber",
+      match: {
+        $or: [
+          { userName: { $regex: keyword, $options: "i" } },
+          { email: { $regex: keyword, $options: "i" } },
+          { phoneNumber: { $regex: keyword, $options: "i" } },
+        ],
+      },
+    });
+
+    // Lọc ra các orders có customer phù hợp
+    const filteredOrders = orders.filter(order => order.customer);
+
+    console.log("Filtered orders:", filteredOrders);
+
+    if (filteredOrders.length === 0) {
+      return res.status(404).json({ message: "No orders found." });
+    }
+
+    // Định dạng lại dữ liệu để trả về giống với getAllOrderByShop
+    const formattedOrders = filteredOrders.map((order, index) => ({
+      key: index + 1,
+      id: order._id,
+      name: order.customer?.userName || 'Unknown',
+      email: order.customer?.email || 'N/A',
+      phoneNumber: order.customer?.phoneNumber || 'N/A',
+      status: order.status || 'Unknown',
+      totalPrice: `$${order.totalOrderPrice || 0}`,
+    }));
+
+    res.status(200).json({ success: true, orders: formattedOrders });
+  } catch (error) {
+    console.error("Error searching orders:", error);
+    res.status(500).json({ success: false, message: "Server Error", error });
+  }
+};
+
+
+
 // ------------------------------------
 
 // @desc    Create Stripe Checkout Session
@@ -551,7 +587,8 @@ exports.orderCancelledStatus = async (req, res) => {
 // @access  Private/Customer
 exports.createVNpay =  async (req, res) => {
 try {
-    const { shops, shippingAddress, paymentMethod, customerId } = req.body;
+    const { shops, shippingAddress, paymentMethod } = req.body;
+    const customerId = req.user._id;
 
     if (!shops || shops.length === 0) {
       return res.status(400).json({
@@ -559,7 +596,7 @@ try {
         message: 'Shops cannot be empty',
       });
     }
-
+    console.log(shops.shopId);
     let totalOrderPrice = 0;
     const orderItems = [];
 
