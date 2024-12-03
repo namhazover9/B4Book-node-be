@@ -141,10 +141,7 @@ exports.getOrderById = async (req, res) => {
   try {
     const { orderId } = req.params;
     // Tìm order dựa trên ID và Customer hiện tại
-    const order = await Order.findOne({ _id: orderId , customer: req.user._id }).populate({
-      path: 'shops.orderItems.product',
-      select: 'title price images',
-    });
+    const order = await Order.findOne({ _id: orderId  });
     
     // Kiểm tra nếu không tìm thấy Order
     if (!order) {
@@ -351,7 +348,6 @@ exports.orderDeliveredStatus = async (req, res) => {
   }
 };
 
-
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { orderId, status } = req.params;
@@ -397,7 +393,6 @@ exports.updateOrderStatus = async (req, res) => {
     });
   }
 };
-
 
 exports.searchOrder = async (req, res) => {
   try {
