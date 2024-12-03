@@ -302,7 +302,6 @@ exports.orderDeliveredStatus = async (req, res) => {
     });
   }
 };
-=======
 exports.getAllOrderByShop = async (req, res) => {
   try {
     const shopId = req.params.id;
