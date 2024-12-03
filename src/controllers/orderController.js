@@ -8,6 +8,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); // Replace with
 //const crypto = require('crypto');
 //const querystring = require('querystring');
 const moment = require('moment');
+const User = require('../models/user');
 // let $ = require('jquery');
 //const request = require('request');
 
@@ -140,12 +141,9 @@ exports.getCustomerOrders = async (req, res) => {
 exports.getOrderById = async (req, res) => {
   try {
     const { orderId } = req.params;
-    // Tìm order dựa trên ID và Customer hiện tại
-    const order = await Order.findOne({ _id: orderId , customer: req.user._id }).populate({
-      path: 'shops.orderItems.product',
-      select: 'title price images',
-    });
-    
+
+    // Tìm order dựa trên ID và populate các trường từ customer
+    const order = await Order.findOne({ _id: orderId }).populate('customer', 'email userName address phoneNumber avartar'); 
     // Kiểm tra nếu không tìm thấy Order
     if (!order) {
       return res.status(404).json({
@@ -154,17 +152,20 @@ exports.getOrderById = async (req, res) => {
       });
     }
 
-    const displayShippedDate = order.shippedDate ? order.shippedDate.toISOString() : "Not ship";
-    const displayDeliveredDate = order.deliveredDate ? order.deliveredDate.toISOString() : "Not deliver";
+    // Tạo các biến hiển thị thay vì thay đổi giá trị trong database
+    // const displayShippedDate = order.shippedDate ? order.shippedDate.toISOString() : "Not ship";
+    // const displayDeliveredDate = order.deliveredDate ? order.deliveredDate.toISOString() : "Not deliver";
 
-    order.shippedDate = displayShippedDate;
-    order.deliveredDate = displayDeliveredDate;
-    await order.save();
-
+    // Trả về dữ liệu với các trường hiển thị
     res.status(200).json({
       status: 'success',
       message: 'Order retrieved successfully',
-      data: order,
+      data: {
+        ...order.toObject(), // Chuyển đổi order thành đối tượng thuần
+        // shippedDate: displayShippedDate,
+        // deliveredDate: displayDeliveredDate,
+        customer: order.customer, // Bao gồm thông tin customer đã populate
+      },
     });
   } catch (error) {
     console.error('Error retrieving order by ID:', error.message);
@@ -175,6 +176,8 @@ exports.getOrderById = async (req, res) => {
     });
   }
 };
+
+
 
 // @desc    Get All Orders by Status
 // @route   GET /by-status?status=<status> (Pending, Confirmed, Shipped, Delivered, Cancelled)
@@ -274,8 +277,6 @@ exports.getAllOrderByShop = async (req, res) => {
 };
 
 
-
-
 // @desc    Update Order Status 
 // @route   PATCH /:orderId/status
 // @access  Private/Shop
@@ -335,7 +336,6 @@ exports.updateOrderStatus = async (req, res) => {
 };
 
 
-3
 // @desc    Cancel Order
 // @route   PATCH /:orderId/cancel
 // @access  Private/Shop-Customer
@@ -375,6 +375,7 @@ exports.cancelOrder= async (req, res) => {
     });
   }
 };
+
 
 exports.searchOrder = async (req, res) => {
   try {
