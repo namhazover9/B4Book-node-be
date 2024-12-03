@@ -141,7 +141,7 @@ exports.getOrderById = async (req, res) => {
   try {
     const { orderId } = req.params;
     // Tìm order dựa trên ID và Customer hiện tại
-    const order = await Order.findOne({ _id: orderId  });
+    const order = await Order.findOne({ _id: orderId });
     
     // Kiểm tra nếu không tìm thấy Order
     if (!order) {
