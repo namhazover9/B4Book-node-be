@@ -188,11 +188,11 @@ const getAllWithdraws = async (req, res) => {
 };
 
 const getWithdrawById = async (req, res) => {
-  const { requestId } = req.params;
+  const { id } = req.params;
 
   try {
     // Tìm yêu cầu rút tiền theo requestId
-    const withdrawRequest = await WithdrawRequest.findById(requestId).populate(
+    const withdrawRequest = await WithdrawRequest.findById(id).populate(
       "shop",
       "shopName shopEmail"
     );
@@ -208,43 +208,43 @@ const getWithdrawById = async (req, res) => {
 };
 
 
-const updateWithdrawRequest = async (req, res) => {
-  const { requestId, status } = req.body;
+// const updateWithdrawRequest = async (req, res) => {
+//   const { requestId, status } = req.body;
 
-  try {
-    // Tìm yêu cầu rút tiền
-    const withdrawRequest = await WithdrawRequest.findById(requestId).populate("shop");
-    if (!withdrawRequest) {
-      return res.status(404).json({ message: "Withdraw request not found" });
-    }
+//   try {
+//     // Tìm yêu cầu rút tiền
+//     const withdrawRequest = await WithdrawRequest.findById(requestId).populate("shop");
+//     if (!withdrawRequest) {
+//       return res.status(404).json({ message: "Withdraw request not found" });
+//     }
 
-    // Kiểm tra trạng thái hiện tại
-    if (withdrawRequest.status !== "Pending") {
-      return res.status(400).json({ message: "Request has already been processed" });
-    }
+//     // Kiểm tra trạng thái hiện tại
+//     if (withdrawRequest.status !== "Pending") {
+//       return res.status(400).json({ message: "Request has already been processed" });
+//     }
 
-    // Cập nhật trạng thái
-    withdrawRequest.status = status;
-    withdrawRequest.processedAt = new Date();
+//     // Cập nhật trạng thái
+//     withdrawRequest.status = status;
+//     withdrawRequest.processedAt = new Date();
 
-    // Nếu yêu cầu bị từ chối, hoàn lại tiền vào ví Shop
-    if (status === "Rejected") {
-      const shop = withdrawRequest.shop;
-      if (!shop) {
-        return res.status(404).json({ message: "Associated shop not found" });
-      }
+//     // Nếu yêu cầu bị từ chối, hoàn lại tiền vào ví Shop
+//     if (status === "Rejected") {
+//       const shop = withdrawRequest.shop;
+//       if (!shop) {
+//         return res.status(404).json({ message: "Associated shop not found" });
+//       }
 
-      shop.wallet += withdrawRequest.amount;
-      await shop.save();
-    }
+//       shop.wallet += withdrawRequest.amount;
+//       await shop.save();
+//     }
 
-    await withdrawRequest.save();
+//     await withdrawRequest.save();
 
-    res.status(200).json({ message: "Withdraw request updated successfully", withdrawRequest });
-  } catch (error) {
-    res.status(500).json({ message: "Internal server error", error });
-  }
-};
+//     res.status(200).json({ message: "Withdraw request updated successfully", withdrawRequest });
+//   } catch (error) {
+//     res.status(500).json({ message: "Internal server error", error });
+//   }
+// };
 
 
 module.exports = { 
@@ -253,6 +253,6 @@ module.exports = {
   showAllUser,
   activeOrDeactive,
   getAllWithdraws,
-  getWithdrawById,
-  updateWithdrawRequest
+  getWithdrawById
+
 };
