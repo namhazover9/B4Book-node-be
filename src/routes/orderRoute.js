@@ -18,10 +18,16 @@ router.get("/:orderId", isAuth, OrderController.getOrderById);
 
 router.post('/place-order-vn', isAuth,  OrderController.createVNpay);
 
+
+
+router.patch("/:orderId/cancel", OrderController.cancelOrder);
+router.patch('/:orderId/status', isShop, OrderController.updateOrderStatus);
+
 // router.patch("/:orderId/confirmed", OrderController.orderConfirmedStatus);
 // router.patch("/:orderId/shipped", OrderController.orderShippedStatus);
 // router.patch("/:orderId/delivered", OrderController.orderDeliveredStatus);
 // router.patch("/:orderId/cancelled", OrderController.orderCancelledStatus);
 // router.patch('/:orderId/status/:status', OrderController.updateOrderStatus);
+
 
 module.exports = router;
