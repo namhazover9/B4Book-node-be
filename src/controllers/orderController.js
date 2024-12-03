@@ -234,7 +234,7 @@ exports.getAllOrderByShop = async (req, res) => {
     let statusFilter = {};
 
     // Kiểm tra giá trị status và xử lý
-    if (status && status !== "default") { // Kiểm tra nếu status không phải "default"
+    if (status && status !== "All Orders") { // Kiểm tra nếu status không phải "default"
       switch (status) {
         case "Pending":
         case "Confirmed":
@@ -335,8 +335,9 @@ exports.updateOrderStatus = async (req, res) => {
 };
 
 
+3
 // @desc    Cancel Order
-// @route   PATCH /:orderId/cancelled
+// @route   PATCH /:orderId/cancel
 // @access  Private/Shop-Customer
 exports.cancelOrder= async (req, res) => {
   try {
@@ -374,6 +375,54 @@ exports.cancelOrder= async (req, res) => {
     });
   }
 };
+
+exports.searchOrder = async (req, res) => {
+  try {
+    const keyword = req.query.keyword;
+    console.log("Search keyword:", keyword);
+
+    // Tìm order và lọc các user phù hợp bằng match
+    const orders = await Order.find().populate({
+      path: "customer",
+      select: "userName email phoneNumber",
+      match: {
+        $or: [
+          { userName: { $regex: keyword, $options: "i" } },
+          { email: { $regex: keyword, $options: "i" } },
+          { phoneNumber: { $regex: keyword, $options: "i" } },
+        ],
+      },
+    });
+
+    // Lọc ra các orders có customer phù hợp
+    const filteredOrders = orders.filter(order => order.customer);
+
+    console.log("Filtered orders:", filteredOrders);
+
+    if (filteredOrders.length === 0) {
+      return res.status(404).json({ message: "No orders found." });
+    }
+
+    // Định dạng lại dữ liệu để trả về giống với getAllOrderByShop
+    const formattedOrders = filteredOrders.map((order, index) => ({
+      key: index + 1,
+      id: order._id,
+      name: order.customer?.userName || 'Unknown',
+      email: order.customer?.email || 'N/A',
+      phoneNumber: order.customer?.phoneNumber || 'N/A',
+      status: order.status || 'Unknown',
+      totalPrice: `$${order.totalOrderPrice || 0}`,
+    }));
+
+    res.status(200).json({ success: true, orders: formattedOrders });
+  } catch (error) {
+    console.error("Error searching orders:", error);
+    res.status(500).json({ success: false, message: "Server Error", error });
+  }
+};
+
+
+
 // ------------------------------------
 
 // @desc    Create Stripe Checkout Session
