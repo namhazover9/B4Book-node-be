@@ -4,7 +4,14 @@ const shopSchema = new mongoose.Schema(
   {
     shopEmail: { type: String, required: true, unique: true },
     shopName: { type: String, required: true, unique: true },
-    shopAddress: {type: String, required: true },
+    address: [
+      { 
+        street: { type: String, required: true },
+        city: { type: String, required: true },
+        country: { type: String, required: true },
+        isDefault: { type: Boolean, default: false }, 
+      },
+    ],
     phoneNumber: { type: String, required: true },
     isActive: { type: Boolean, required: true },
     isApproved:{ type: Boolean, required: true },

@@ -16,45 +16,44 @@ const calcTotalCartPrice = (cart) => {
 // @access  Private/Customer
 exports.addProductToCart = async (req, res) => {
   try {
-    const { productId } = req.body;
-    // Lấy thông tin sản phẩm từ Product
+    const { productId, quantity } = req.body;
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ status: 'error', message: 'Product not found' });
     }
-    // Lấy Cart cho user đã đăng nhập
-    let cart = await Cart.findOne({ user: req.user._id });
+
+    let cart = await ShoppingCart.findOne({ user: req.user._id });
     if (!cart) {
-      // Tạo mới giỏ hàng nếu chưa tồn tại
-      cart = await Cart.create({
+      cart = await ShoppingCart.create({
         user: req.user._id,
         cartItems: [
-          { product: productId, title: product.title, price: product.price, images: product.images },
+          {
+            product: productId,
+            title: product.title,
+            price: product.price,
+            images: product.images,
+            quantity: quantity, // Thêm số lượng
+          },
         ],
       });
     } else {
-      // Kiểm tra xem sản phẩm đã tồn tại trong giỏ hàng hay chưa
       const productIndex = cart.cartItems.findIndex(
         (item) => item.product.toString() === productId
       );
       if (productIndex > -1) {
-        // Sản phẩm đã tồn tại: cập nhật số lượng
-        const cartItem = cart.cartItems[productIndex];
-        cartItem.quantity += 1;
-        cart.cartItems[productIndex] = cartItem;
+        cart.cartItems[productIndex].quantity += quantity; // Cộng thêm quantity
       } else {
-        // Sản phẩm chưa tồn tại: thêm vào giỏ hàng
         cart.cartItems.push({
           product: productId,
           title: product.title,
           price: product.price,
           images: product.images,
+          quantity: quantity, // Thêm quantity cho sản phẩm mới
         });
       }
     }
-    // Tính tổng giá trị của giỏ hàng
+
     calcTotalCartPrice(cart);
-    // Lưu giỏ hàng
     await cart.save();
     res.status(200).json({
       status: 'success',
@@ -67,8 +66,6 @@ exports.addProductToCart = async (req, res) => {
   }
 };
 
-
-  
   
   
 // @desc    Get logged user cart

@@ -4,7 +4,14 @@ const userSchema = new mongoose.Schema(
   {
     email: { type: String },
     userName: { type: String, required: true },
-    address: [{ type: String }],
+    address: [
+      { 
+        street: { type: String, required: true },
+        city: { type: String, required: true },
+        country: { type: String, required: true },
+        isDefault: { type: Boolean, default: false }, 
+      },
+    ],
     phoneNumber: { type: String },
     lastLogin: { type: Date, required: true },
     isActive: { type: Boolean, required: true },
