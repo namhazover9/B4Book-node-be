@@ -138,7 +138,65 @@ exports.getCustomerOrders = async (req, res) => {
 // @desc    Get Order by Id
 // @route   GET /:orderId 
 // @access  Private/Shop-Customer-Admin
-exports.getOrderById = async (req, res) => {
+exports.getOrderByIdForShop = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const userId = req.user._id; // Lấy ID của người dùng đang đăng nhập từ token
+
+    // Tìm order dựa trên ID và populate cả thông tin customer
+    const order = await Order.findOne({ _id: orderId })
+      .populate('shops.shopId', 'name') // Populate thông tin shop (có thể thêm các trường cần thiết)
+      .populate('customer', 'email userName address phoneNumber avartar'); // Populate thông tin customer
+
+    // Kiểm tra nếu không tìm thấy Order
+    if (!order) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Order not found or does not belong to this customer',
+      });
+    }
+
+    // Lọc các shop trong order để chỉ lấy shop của người dùng hiện tại
+    const shop = order.shops.find((shop) => shop.shopId._id.toString() === userId.toString());
+
+    // Nếu không tìm thấy shop của người dùng trong order
+    if (!shop) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'No order items found for the current shop',
+      });
+    }
+
+    // Lấy danh sách các order items của shop hiện tại
+    const filteredOrderItems = shop.orderItems;
+
+    // Trả về dữ liệu với thông tin shop và customer
+    res.status(200).json({
+      status: 'success',
+      message: 'Order retrieved successfully',
+      data: {
+        ...order.toObject(), // Chuyển order thành đối tượng thuần
+        shops: [
+          {
+            ...shop.toObject(), // Chỉ bao gồm shop của user hiện tại
+            orderItems: filteredOrderItems, // Lọc order items
+          },
+        ],
+        customer: order.customer, // Bao gồm thông tin customer đã populate
+      },
+    });
+  } catch (error) {
+    console.error('Error retrieving order by ID for shop:', error.message);
+    res.status(500).json({
+      status: 'error',
+      message: 'Something went wrong while retrieving the order',
+      error: error.message,
+    });
+  }
+};
+
+
+exports.getOrderByIdForCustomer = async (req, res) => {
   try {
     const { orderId } = req.params;
 
@@ -176,7 +234,6 @@ exports.getOrderById = async (req, res) => {
     });
   }
 };
-
 
 
 // @desc    Get All Orders by Status
@@ -275,6 +332,7 @@ exports.getAllOrderByShop = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error", error });
   }
 };
+
 
 
 // @desc    Update Order Status 

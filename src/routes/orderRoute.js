@@ -6,11 +6,12 @@ const { isShop, isAuth, isCustomer } = require("../middlewares/auth");
 
 router.get("/by-status", isAuth, OrderController.getAllOrdersByStatus);
 router.get("/getAllOrderByShop/:id", isShop, OrderController.getAllOrderByShop);
+router.get("/getAllOrderByCustomer/:id",isAuth, OrderController.getOrderByIdForCustomer);
 router.get('/cart-data', isAuth, OrderController.getCartForOrder);
 router.get("/search",isShop, OrderController.searchOrder);
 router.get("/vnpay-return", OrderController.vnpayReturn);
 router.get("/customer/:id", isAuth, OrderController.getCustomerOrders);
-router.get("/:orderId", isAuth, OrderController.getOrderById);
+router.get("/:orderId", isShop, OrderController.getOrderByIdForShop);
 
 // router.post("/summary", isAuth, OrderController.createOrder);
 // router.post("/create_payment_url", OrderController.createVNpay);
