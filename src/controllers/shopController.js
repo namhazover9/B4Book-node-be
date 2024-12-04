@@ -8,19 +8,22 @@ const createVoucher = async (req, res) => {
 
   try {
     // find shop base on user._id
-    const shop = await Shop.findOne({ user:req.user._id });
+    const shop = await Shop.findById(req.user._id);
+    if (!shop) throw new Error("Shop not found");
+   
     // create current date to compare with valid date and expired date
     const currentDate = new Date().setHours(0, 0, 0, 0);
   
-    if (!shop) throw new Error("Shop not found");
+   
 
     // input voucher from user
-    const { name, value, expired, valid,image } = req.body;
+    const { name, value, expired, valid } = req.body;
+    const image = req.files.map((file) => file.path);
     let active = true;
     let code = generateRandomCode(20);
 
     // check conditions input
-    if (!name || !code || !value || !expired || !valid,!image)
+    if (!name || !value || !expired || !valid)
       throw new Error("Missing required fields");
 
     if (new Date(expired).getTime() < currentDate || new Date(valid).getTime() < currentDate)
@@ -34,7 +37,7 @@ const createVoucher = async (req, res) => {
     }
 
     // Create new voucher 
-    const newVoucher = new Voucher({
+    const newVoucher = await Voucher.create({
       name,
       code: code,
       value,
@@ -45,7 +48,7 @@ const createVoucher = async (req, res) => {
       isDeleted: false,
       image: image,
     });
-    res.status(201).json(newVoucher);
+    res.status(200).json(newVoucher);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -155,17 +158,55 @@ const deleteVoucher = async (req, res) => {
 // update voucher 
 const updateVoucher = async (req, res) => {
   try {
-    // find voucher by id and update it
-    const voucher = await Voucher.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
+    // Extract image files if provided
+    const image = req.files?.map((file) => file.path);
+
+    // Extract fields to update from req.body
+    const { name, value, valid, expired, isActive } = req.body;
+    // Build update object
+    const updateFields = {
+      ...(name && { name }),
+      ...(value && { value }),
+      ...(valid && { valid }),
+      ...(expired && { expired }),
+      ...(isActive !== undefined && { isActive }),
+    };
+
+    // Include images if provided
+    if (image && image.length > 0) {
+      updateFields.image = image;
+    }
+
+    // Find voucher by id and update it
+    const voucher = await Voucher.findByIdAndUpdate(req.params.id, updateFields, {
+      new: true, // Return the updated document
     });
+    
     if (!voucher) throw new Error("Voucher not found");
-    res.status(200).json({ message: "Voucher updated successfully" });
+
+    res.status(200).json({ message: "Voucher updated successfully", voucher });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
+const searchVoucherForShop = async (req, res) => {
+  try {
+    const { name,shop } = req.query;
+   if(shop){
+    const shopId = await Shop.findOne({ _id: shop });
+    if (!shopId) throw new Error("Shop not found");
+    const vouchers = await Voucher.find({ shopId: shopId._id,name: { $regex: name, $options: 'i' } });
+    res.status(200).json(vouchers);
+   }
+   else{
+    const vouchers = await Voucher.find({ name: { $regex: name, $options: 'i' } });
+    res.status(200).json(vouchers);
+   }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
 // filter shop function
 const getAllShop = async (req, res) => {
   const { name, page = 1, limit = 10 } = req.query;
@@ -344,5 +385,6 @@ module.exports = {
   switchCustomer,
   createWithdrawRequest,
   getWithdrawsByShopId,
-  getAllVoucherForShop
+  getAllVoucherForShop,
+  searchVoucherForShop
 };
