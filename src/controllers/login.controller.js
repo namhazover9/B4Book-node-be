@@ -30,9 +30,6 @@ const postLogin = async (req, res, next) => {
     }
     // kiểm tra password
     const isMatch = await bcrypt.compare(password, account.passWord);
-    console.log(account.passWord);
-    console.log(password);
-    console.log(isMatch);
     // ! sai mật khẩu -> thất bại
     if (!isMatch) {
       // tăng số lần đăng nhập thất bại
