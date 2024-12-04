@@ -402,10 +402,6 @@ const getWithdrawsByShopId = async (req, res) => {
   }
 };
 
-
-
-
-
 module.exports = {
    createVoucher,
   getValueVoucher,
