@@ -9,6 +9,7 @@ const bcrypt = require("bcryptjs");
 const { sendMail } = require("../middlewares/sendEmailPassword");
 const { generateRandomCode } = require("../middlewares/generateCode");
 const { data } = require("jquery");
+const { log } = require("console");
 dotenv.config();
 const loadAuth = (req, res) => {
   res.render(path.join(__dirname, "../views/user.ejs"));
@@ -172,13 +173,13 @@ const addPassword = async (req, res) => {
 const sendVerifyCode = async (req, res) => {
   try {
     const {email} = req.body;
-    const randomeCode = generateRandomCode(6);
+    const verifyCode = generateRandomCode(6);
     const user = await User.findOne({ email: email, authProvider: "google" });
     if (!user) {
       return res.status(404).send({ message: "User not found" });
     }
-    const verify = jwt.sign({user, randomeCode}, process.env.Activation_sec, {expiresIn: "5m"});
-    await sendMail(user.email, "VerifyToken", randomeCode);
+    const verify = jwt.sign({user, verifyCode}, process.env.Activation_sec, {expiresIn: "5m"});
+    await sendMail(user.email, "VerifyToken", verifyCode);
     return res.json({
       success: true,
       message: "Verify code sent successfully",
@@ -190,39 +191,49 @@ const sendVerifyCode = async (req, res) => {
 } 
 
 // reset password fucntion
-const forgotPassword = async (req, res) => {
-  const { email, newPassword, verifyToken, randomeCode } = req.body;
- 
-  // generate random code function
- 
+const resetPassword = async (req, res) => {
+  const { email, newPassword, verifyToken, verifyCode } = req.body;
   try {
-    const hash = await bcrypt.hash(newPassword, 10);
     const verify = jwt.verify(verifyToken, process.env.Activation_sec);
 
     if (!verify) {
       return res.status(400).json({
         isAuth: false,
-        message: "code Expired",
+        message: "Code expired or invalid",
       });
     }
-    console.log(verify.randomeCode !== randomeCode);
-    if (verify.randomeCode.toString() !== randomeCode.toString()) {
+ 
+    if ((verify.verifyCode?.toString() !== verifyCode?.toString())) {
       return res.status(400).json({
-        message: "Wrong otp",
+        message: "Wrong OTP",
       });
     }
-    const user = await User.findOneAndUpdate({ email: email, authProvider: "google" }, { passWord: hash }, { new: true });
+
+    const hash = await bcrypt.hash(newPassword, 10);
+
+    const user = await User.findOneAndUpdate(
+      { email: email },
+      { passWord: hash },
+      { new: true }
+    );
+    console.log(user);
     if (!user) {
       return res.status(404).send({ message: "User not found" });
     }
+
     return res.json({
-      success: true,  
-      message: "Reset password",
+      success: true,
+      message: "Password reset successfully",
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
+    if (error.name === "TokenExpiredError") {
+      return res.status(400).json({ message: "Token expired" });
+    }
+    return res.status(500).json({ message: "Server error" });
   }
 };
+
 
 // render home page and verify token
 // const verifyToken = (req, res) => {
@@ -468,7 +479,7 @@ module.exports = {
   addPassword,
   addWishlistProduct,
   deleteWishlistProduct,
-  forgotPassword,
+  resetPassword,
   updateProfileUser,
   sendVerifyCode,
   showDetailShop,
