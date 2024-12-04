@@ -258,32 +258,133 @@ const showProfile = async (req, res) => {
   } catch (error) {}
 };
 
+// @desc    Add new address
+// @route   POST /address/add
+// @access  Private/Customer
+const addAddress = async (req, res) => {
+  try {
+    const { street, city, country } = req.body;
+
+    if (!street || !city || !country) {
+      return res.status(400).json({ message: "All address fields are required" });
+    }
+
+    // Tìm User hiện tại
+    const user = await User.findById(req.user._id);
+    if (!user) throw new Error("User not found");
+
+    // Đặt tất cả địa chỉ hiện tại `isDefault` thành false
+    user.address.forEach(address => {
+      address.isDefault = false;
+    });
+
+    // Thêm địa chỉ mới với `isDefault: true`
+    user.address.push({
+      street,
+      city,
+      country,
+      isDefault: true,
+    });
+
+    // Lưu lại User
+    await user.save();
+
+    res.status(201).json({ message: "Address added successfully", address: user.address });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Edit address
+// @route   PUT /address/update/:id
+// @access  Private/Customer
+const updateAddress = async (req, res) => {
+  try {
+    const { street, city, country, isDefault } = req.body;
+    const { id } = req.params; // Lấy addressId từ route parameters
+
+    const user = await User.findById(req.user._id);
+    if (!user) throw new Error("User not found");
+
+    // Tìm địa chỉ cần cập nhật
+    const address = user.address.id(id);
+    if (!address) throw new Error("Address not found");
+
+    // Cập nhật thông tin địa chỉ
+    if (street) address.street = street;
+    if (city) address.city = city;
+    if (country) address.country = country;
+
+    // Nếu `isDefault: true`, cập nhật tất cả các địa chỉ khác thành `false`
+    if (isDefault === true) {
+      user.address.forEach(addr => (addr.isDefault = false));
+      address.isDefault = true;
+    }
+
+    await user.save();
+
+    res.status(200).json({ message: "Address updated successfully", addresses: user.address });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Delete an address
+// @route   DELETE /address/delete/:id
+// @access  Private/Customer
+const deleteAddress = async (req, res) => {
+  try {
+    const { id } = req.params; // Lấy addressId từ route parameters
+
+    const user = await User.findById(req.user._id);
+    if (!user) throw new Error("User not found");
+
+    // Tìm và xóa địa chỉ trong mảng
+    const addressIndex = user.address.findIndex(address => address._id.toString() === id);
+    if (addressIndex === -1) throw new Error("Address not found");
+
+    user.address.splice(addressIndex, 1); // Xóa địa chỉ
+
+    // Nếu địa chỉ vừa xóa là mặc định và vẫn còn địa chỉ khác, đặt địa chỉ đầu tiên làm mặc định
+    if (user.address.length > 0 && user.address.every(addr => addr.isDefault === false)) {
+      user.address[0].isDefault = true;
+    }
+
+    await user.save();
+
+    res.status(200).json({ message: "Address deleted successfully", addresses: user.address });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
 // function register from normal user become a seller
 const registerShop = async (req, res) => {
   try {
     const {
       shopEmail,
       shopName,
-      shopAddress,
+      address,
       phoneNumber,
     } = req.body;
 
       const reg = /^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)*$/;
       const images = req.files.map((file) => file.path); 
       const isCheckEmail = reg.test(shopEmail);
-      console.log(shopName, shopEmail, shopAddress, phoneNumber);
+      console.log(shopName, shopEmail, address, phoneNumber);
       
       if(!isCheckEmail){
           return res.status(400).send({ message: "Email is not valid" });
       }
-      if (!shopName || !shopAddress || !phoneNumber ) {
+      if (!shopName || !address || !phoneNumber ) {
           return res.status(400).send({ message: "The input is required" });
       }
 
       const register = new Shop({
           shopName,
           shopEmail,
-          shopAddress,
+          address,
           phoneNumber,
           images,
           isActive: false,
@@ -470,6 +571,9 @@ module.exports = {
   deleteWishlistProduct,
   forgotPassword,
   updateProfileUser,
+  addAddress,
+  updateAddress,
+  deleteAddress,
   sendVerifyCode,
   showDetailShop,
   switchShop
