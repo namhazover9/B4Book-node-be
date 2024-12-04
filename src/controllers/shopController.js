@@ -37,13 +37,13 @@ const createVoucher = async (req, res) => {
     const newVoucher = new Voucher({
       name,
       code: code,
-      image: image,
       value,
       validDate: valid,
       expired: expired,
       shopId: shop._id, 
       isActive: active,
-      isDeleted: false
+      isDeleted: false,
+      image: image,
     });
     res.status(201).json(newVoucher);
   } catch (error) {
