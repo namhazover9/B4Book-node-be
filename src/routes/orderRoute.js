@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const OrderController = require('../controllers/orderController');
 const { isShop, isAuth, isCustomer } = require("../middlewares/auth");
+const bodyParser = require('body-parser');
 
 
 router.get("/by-status", isAuth, OrderController.getAllOrdersByStatus);
@@ -14,8 +15,8 @@ router.get("/customer/:id", isAuth, OrderController.getCustomerOrders);
 router.get("/:orderId", isShop, OrderController.getOrderByIdForShop);
 
 // router.post("/summary", isAuth, OrderController.createOrder);
-// router.post("/create_payment_url", OrderController.createVNpay);
-// router.post('/stripe/webhook', isAuth, express.raw({ type: 'application/json' }), OrderController.stripeWebhook)
+router.post("/place-order-stp", isAuth, OrderController.placeOrderSTP);
+router.post('/stripe/webhook', isAuth, bodyParser.raw({ type: 'application/json' }), OrderController.stripeWebhook)
 
 router.post('/place-order-vn', isAuth,  OrderController.createVNpay);
 

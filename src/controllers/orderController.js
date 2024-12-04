@@ -4,6 +4,7 @@ const Cart = require('../models/shoppingCart');
 const Voucher = require('../models/voucher');
 const Shop = require('../models/shop');
 
+const sendMail = require('../middlewares/sendEmailOrder');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); // Replace with your Stripe secret key
 //const crypto = require('crypto');
 //const querystring = require('querystring');
@@ -138,15 +139,14 @@ exports.getCustomerOrders = async (req, res) => {
 // @desc    Get Order by Id
 // @route   GET /:orderId 
 // @access  Private/Shop-Customer-Admin
+
 exports.getOrderByIdForShop = async (req, res) => {
   try {
     const { orderId } = req.params;
     const userId = req.user._id; // Lấy ID của người dùng đang đăng nhập từ token
 
-    // Tìm order dựa trên ID và populate cả thông tin customer
-    const order = await Order.findOne({ _id: orderId })
-      .populate('shops.shopId', 'name') // Populate thông tin shop (có thể thêm các trường cần thiết)
-      .populate('customer', 'email userName address phoneNumber avartar'); // Populate thông tin customer
+    // Tìm order dựa trên ID
+    const order = await Order.findOne({ _id: orderId }).populate('shops.shopId');
 
     // Kiểm tra nếu không tìm thấy Order
     if (!order) {
@@ -157,7 +157,7 @@ exports.getOrderByIdForShop = async (req, res) => {
     }
 
     // Lọc các shop trong order để chỉ lấy shop của người dùng hiện tại
-    const shop = order.shops.find((shop) => shop.shopId._id.toString() === userId.toString());
+    const shop = order.shops.find(shop => shop.shopId._id.toString() === userId.toString());
 
     // Nếu không tìm thấy shop của người dùng trong order
     if (!shop) {
@@ -170,23 +170,21 @@ exports.getOrderByIdForShop = async (req, res) => {
     // Lấy danh sách các order items của shop hiện tại
     const filteredOrderItems = shop.orderItems;
 
-    // Trả về dữ liệu với thông tin shop và customer
     res.status(200).json({
       status: 'success',
       message: 'Order retrieved successfully',
       data: {
-        ...order.toObject(), // Chuyển order thành đối tượng thuần
+        ...order.toObject(),
         shops: [
           {
-            ...shop.toObject(), // Chỉ bao gồm shop của user hiện tại
-            orderItems: filteredOrderItems, // Lọc order items
+            ...shop.toObject(),
+            orderItems: filteredOrderItems,
           },
         ],
-        customer: order.customer, // Bao gồm thông tin customer đã populate
       },
     });
   } catch (error) {
-    console.error('Error retrieving order by ID for shop:', error.message);
+    console.error('Error retrieving order by ID:', error.message);
     res.status(500).json({
       status: 'error',
       message: 'Something went wrong while retrieving the order',
@@ -488,90 +486,228 @@ exports.searchOrder = async (req, res) => {
 // @route   POST /order/place-order
 // @access  Private/Customer
 
-// exports.placeOrder = async (req, res) => {
-//   try {
-//     const { shops, shippingAddress, paymentMethod } = req.body;
+exports.placeOrderSTP = async (req, res) => {
+  try {
+    const { shops, shippingAddress, paymentMethod } = req.body;
+    const customerId = req.user._id;
 
-//     if (!shops || shops.length === 0) {
-//       return res.status(400).json({
-//         status: 'fail',
-//         message: 'Shops cannot be empty',
-//       });
-//     }
+    if (!shops || shops.length === 0) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Shops cannot be empty',
+      });
+    }
 
-//     let totalOrderPrice = 0;
-//     const orderItems = [];
+    let totalOrderPrice = 0;
+    const orderItems = [];
 
-//     // Prepare order items and calculate total price
-//     for (const shop of shops) {
-//       for (const item of shop.orderItems) {
-//         const product = await Product.findById(item.product);
-//         if (!product || product.stock < item.quantity) {
-//           return res.status(400).json({
-//             status: 'fail',
-//             message: `Product out of stock or not available: ${item.product}`,
-//           });
-//         }
+    // Duyệt qua từng shop để tạo danh sách đơn hàng
+    for (const shop of shops) {
+      let shopTotalPrice = 0;
+      for (const item of shop.orderItems) {
+        const product = await Product.findById(item.product);
+        if (!product || product.stock < item.quantity) {
+          return res.status(400).json({
+            status: 'fail',
+            message: `Product out of stock or not available: ${item.product}`,
+          });
+        }
 
-//         const itemTotal = product.price * item.quantity;
-//         totalOrderPrice += itemTotal;
+        const itemTotal = product.price * item.quantity;
+        shopTotalPrice += itemTotal;
 
-//         orderItems.push({
-//           product: product._id,
-//           title: product.title,
-//           price: product.price,
-//           quantity: item.quantity,
-//         });
-//       }
-//     }
+        orderItems.push({
+          product: product._id,
+          title: product.title,
+          price: product.price,
+          quantity: item.quantity,
+          images: product.images,
+        });
+      }
 
-//     // If payment method is Credit Card, create Stripe Checkout Session
-//     if (paymentMethod === 'Credit Card') {
-//       const session = await stripe.checkout.sessions.create({
-//         payment_method_types: ['card'],
-//         mode: 'payment',
-//         customer_email: req.user.email,
-//         line_items: orderItems.map((item) => ({
-//           price_data: {
-//             currency: 'usd',
-//             product_data: {
-//               name: item.title,
-//             },
-//             unit_amount: Math.round(item.price * 100),
-//           },
-//           quantity: item.quantity,
-//         })),
-//         success_url: `${process.env.CLIENT_URL}/order/success`, // Replace with your frontend success page
-//         cancel_url: `${process.env.CLIENT_URL}/order/cancel`,   // Replace with your frontend cancel page
-//         metadata: {
-//           userId: req.user._id .toString(),
-//           shops: JSON.stringify(shops),
-//           shippingAddress: JSON.stringify(shippingAddress),
-//           paymentMethod,
-//         },
-//       });
+      const randomShippingCost = () => Math.floor(Math.random() * (8 - 4 + 1)) + 4;
+      // Cộng phí vận chuyển
+      shop.shippingCost = randomShippingCost();
+      const shippingCost = shop.shippingCost;
+      console.log(shippingCost);
+      shopTotalPrice += shippingCost;
 
-//       return res.status(200).json({
-//         status: 'success',
-//         message: 'Stripe session created',
-//         sessionId: session.id,
-//       });
-//     }
+      const voucherDiscount = shop.voucherDiscount || 0;
+      
+      // Xử lý voucherDiscount (nếu có)
+      if (voucherDiscount) {
+        const voucher = await Voucher.findById(voucherDiscount);
+        if (!voucher) {
+          return res.status(400).json({
+            status: 'fail',
+            message: `Invalid voucher for shop: ${shop.shopId}`,
+          });
+        }
 
-//     res.status(400).json({
-//       status: 'fail',
-//       message: 'Payment method not supported',
-//     });
-//   } catch (error) {
-//     console.error('Error creating Stripe session:', error.message);
-//     res.status(500).json({
-//       status: 'error',
-//       message: 'Something went wrong while creating Stripe session',
-//       error: error.message,
-//     });
-//   }
-// };
+        // Kiểm tra hiệu lực của voucher
+        const now = new Date();
+        if (!voucher.isActive || voucher.expired < now || voucher.validDate > now) {
+          return res.status(400).json({
+            status: 'fail',
+            message: `Voucher is expired or not valid yet: ${voucher.code}`,
+          });
+        }
 
+        // Tính giá trị giảm giá
+        const discountValue = (shopTotalPrice * voucher.value) / 100;
+        shopTotalPrice -= discountValue;
+      }
+
+      // Đảm bảo tổng giá không âm
+      shopTotalPrice = Math.max(shopTotalPrice, 0);
+
+      shop.totalShopPrice = shopTotalPrice;
+      
+      totalOrderPrice += shop.totalShopPrice;
+    }  
+
+    // If payment method is Credit Card, create Stripe Checkout Session
+    if (paymentMethod === 'Credit Card') {
+
+      const order = await Order.create({
+        customer: customerId,
+        shops,
+        shippingAddress,
+        paymentMethod,
+        totalOrderPrice,
+        status: 'Pending',
+      });
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        mode: 'payment',
+        customer_email: req.user.email,
+        line_items: orderItems.map((item) => ({
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: item.title,
+              images: item.images,
+            },
+            unit_amount: Math.round(item.price * 100),
+          },
+          quantity: item.quantity,
+        })),
+        success_url: "https://39d3-113-160-225-96.ngrok-free.app/order/stripe/webhook", // Replace with your frontend success page
+        cancel_url: `${process.env.CLIENT_URL}/cart`,   // Replace with your frontend cancel page
+        metadata: {
+          orderId: order._id.toString(),
+        },
+       });
+       
+
+      return res.status(200).json({
+        status: 'success',
+        message: 'Stripe session created',
+        url: session.url,
+      });
+    }
+
+    res.status(400).json({
+      status: 'fail',
+      message: 'Payment method not supported',
+    });
+  } catch (error) {
+    console.error('Error creating Stripe session:', error.message);
+    res.status(500).json({
+      status: 'error',
+      message: 'Something went wrong while creating Stripe session',
+      error: error.message,
+    });
+  }
+};
+
+exports.stripeWebhook = async (req, res) => {
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET; // Secret từ Stripe Dashboard
+  const sig = req.headers['stripe-signature'];
+
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.rawBody, sig, endpointSecret);
+  } catch (err) {
+    console.error('Error verifying Stripe signature:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Xử lý các sự kiện từ Stripe
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+
+    try {
+      // Tìm đơn hàng tương ứng dựa trên session ID
+      const order = await Order.findOne({ stripeSessionId: session.id }).populate('shops.orderItems.product');
+      if (!order) {
+        console.error('Order not found for session ID:', session.id);
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      // Cập nhật trạng thái thanh toán
+      order.isPaid = true;
+      order.paidAt = new Date();
+      await order.save();
+
+      // Cập nhật tồn kho và doanh số
+      for (const shop of order.shops) {
+        for (const item of shop.orderItems) {
+          const product = await Product.findById(item.product._id);
+          if (product) {
+            product.stock -= item.quantity;
+            product.salesNumber += item.quantity;
+            await product.save();
+          }
+        }
+
+        // Cập nhật ví của shop
+        const shopDoc = await Shop.findById(shop.shopId);
+        if (shopDoc) {
+          shopDoc.wallet = (shopDoc.wallet || 0) + shop.totalShopPrice;
+          await shopDoc.save();
+        }
+      }
+
+      // Dọn sạch giỏ hàng của khách hàng
+      await Cart.findOneAndUpdate({ user: order.customer }, { cartItems: [] });
+
+      // Gửi email xác nhận đơn hàng
+      const customer = await User.findById(order.customer);
+      const email = customer.email;
+      const subject = 'Order Confirmation';
+      const orderDetails = {
+        id: order._id,
+        date: order.createdAt.toISOString().slice(0, 10),
+        total: order.totalOrderPrice,
+        currency: 'USD',
+      };
+
+      try {
+        await sendMail(email, subject, orderDetails);
+        console.log('Order confirmation email sent to:', email);
+      } catch (emailError) {
+        console.error('Error sending confirmation email:', emailError.message);
+      }
+
+      return res.status(200).json({
+        status: 'success',
+        message: 'Transaction verified successfully',
+      });
+    } catch (error) {
+      console.error('Error processing Stripe webhook:', error.message);
+      return res.status(500).json({
+        status: 'error',
+        message: 'Something went wrong',
+        error: error.message,
+      });
+    }
+  }
+
+  // Nếu sự kiện không được hỗ trợ
+  res.status(400).json({ message: 'Unhandled event type' });
+};
 
 // exports.stripeWebhook = async (req, res) => {
 //   let event;
@@ -655,7 +791,7 @@ try {
         message: 'Shops cannot be empty',
       });
     }
-    console.log(shops.shopId);
+
     let totalOrderPrice = 0;
     const orderItems = [];
 
@@ -724,7 +860,7 @@ try {
       totalOrderPrice += shop.totalShopPrice;
     }  
 
-    if (paymentMethod === 'VNPAY') {
+    if (paymentMethod === 'Credit Card') {
       // Create the order
       const order = await Order.create({
         customer: customerId,
@@ -851,7 +987,28 @@ exports.vnpayReturn = async (req, res) => {
         }
       }
 
+      const customer = await User.findOne({ _id: order.customer });
+
       await Cart.findOneAndUpdate({ user: order.customer }, { cartItems: [] });
+
+
+      // Gửi email xác nhận đơn hàng
+      const email = customer.email; // Giả sử email khách hàng được lưu trong order
+      console.log(email);
+      const subject = "Order Confirmation";
+      const orderDetails = {
+        id: order._id,
+        date: order.createdAt.toISOString().slice(0, 10),
+        total: order.totalOrderPrice,
+        currency: "VND",
+      };
+
+      try {
+        await sendMail(email, subject, orderDetails);
+        console.log("Order confirmation email sent to:", email);
+      } catch (emailError) {
+        console.error("Error sending confirmation email:", emailError.message);
+      }
 
       return res.status(200).json({
         code: vnp_Params['vnp_ResponseCode'],

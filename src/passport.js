@@ -23,7 +23,7 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        const hash = await bcrypt.hash("Xinchaocacban", 10);
+        const hash = await bcrypt.hash("xinchaocacban", 10);
         const { id, name, emails } = profile;
         const { familyName, givenName } = name;
         const email = emails[0].value;
