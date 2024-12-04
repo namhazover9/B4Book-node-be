@@ -19,13 +19,17 @@ passport.use(
     {
       clientID: process.env.CLIENT_ID,
       clientSecret: process.env.CLIENT_SECRET,
+      scope: ['profile', 'email'],  // Yêu cầu quyền truy cập profile và email
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
+        console.log(profile);  // In toàn bộ profile để kiểm tra
         const { id, name, emails } = profile;
         const { familyName, givenName } = name;
         const email = emails[0].value;
 
+        // Lấy avatar từ trường picture
+        const avartar = profile._json.picture || '';
         // Kiểm tra người dùng đã tồn tại hay chưa
         let user = await User.findOne({ googleId: id, authProvider: 'google' });
 
@@ -45,14 +49,14 @@ passport.use(
             isActive: true,
             authProvider: 'google',
             googleId: id,
-            lastLogin: Date.now(),
-            isActive: true,
-            avatar: profile.photos && profile.photos.length > 0 ? profile.photos[0].value : '',
-            role: [defaultRole._id], // Gán ObjectId của vai trò vào trường role
+            avartar: avartar,  // Lưu avatar vào trường avatar
+            role: [defaultRole._id],  // Gán ObjectId của vai trò vào trường role
           });
 
           await user.save();
         }
+
+        // Cập nhật thời gian đăng nhập
         user.lastLogin = Date.now();
         await user.save();
         done(null, user);
@@ -60,25 +64,28 @@ passport.use(
         console.error('Error in GoogleStrategy:', error.message);
         done(error, null);
       }
-    },
-  ),
+    }
+  )
 );
+
 
 passport.use(
   new FacebookStrategy(
     {
       clientID: process.env.CLIENT_ID_FB, // Your Credentials here.
       clientSecret: process.env.CLIENT_SECRET_FB, // Your Credentials here.
-      profileFields: ['id', 'emails', 'name'] ,
-      fbGraphVersion: 'v3.0'
+      profileFields: ['id', 'emails', 'name', 'photos'], 
+      fbGraphVersion: 'v3.0',
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
         const { id, name, emails } = profile;
 
-        const displayName = name.familyName + ' ' + name.givenName; 
-       console.log(id)
+        const displayName = name.familyName + ' ' + name.givenName;
         const email = emails[0].value;
+
+        // Lấy avatar từ picture.data.url
+        const avatar = profile._json.picture ? profile._json.picture.data.url : '';
 
         // Kiểm tra người dùng đã tồn tại hay chưa
         let user = await User.findOne({ facebookId: id, authProvider: 'facebook' });
@@ -99,24 +106,24 @@ passport.use(
             isActive: true,
             authProvider: 'facebook',
             facebookId: id,
-            lastLogin: Date.now(),
-            isActive: true,
-           
+            avartar: avatar,  // Sử dụng avatar từ picture.data.url
             role: [defaultRole._id], // Gán ObjectId của vai trò vào trường role
           });
 
           await user.save();
         }
+
         user.lastLogin = Date.now();
         await user.save();
         done(null, user);
       } catch (error) {
-        console.error('Error in GoogleStrategy:', error.message);
+        console.error('Error in FacebookStrategy:', error.message);
         done(error, null);
       }
-    },
+    }
   )
 );
+
 
 const jwtAuthentication = async (req, res, next) => {
   try {

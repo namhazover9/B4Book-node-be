@@ -1,5 +1,5 @@
 const Product = require('../models/product');
-const Cart = require('../models/shoppingCart');
+const ShoppingCart = require('../models/shoppingCart');
 
 const calcTotalCartPrice = (cart) => {
     let totalPrice = 0;
@@ -22,8 +22,10 @@ exports.addProductToCart = async (req, res) => {
       return res.status(404).json({ status: 'error', message: 'Product not found' });
     }
 
+    // Lấy ShoppingCartcho user đã đăng nhập
     let cart = await ShoppingCart.findOne({ user: req.user._id });
     if (!cart) {
+      // Tạo mới giỏ hàng nếu chưa tồn tại
       cart = await ShoppingCart.create({
         user: req.user._id,
         cartItems: [
@@ -78,7 +80,11 @@ exports.getLoggedUserCart = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10; // Số mục mỗi trang (mặc định là 10)
     const skip = (page - 1) * limit; // Bỏ qua các mục của các trang trước
     // Lấy cart của user
-    const cart = await Cart.findOne({ user: userId });
+    const cart = await ShoppingCart.findOne({ user: userId }).populate({
+      path: "cartItems.product",
+      model: "Product",
+      select: "title description price images author publisher ISBN language stock category",
+    });
     // Xử lý khi giỏ hàng không tồn tại hoặc không có sản phẩm
     if (!cart || cart.cartItems.length === 0) {
       return res.status(200).json({
@@ -111,7 +117,7 @@ exports.getLoggedUserCart = async (req, res) => {
 // @access  Private/Customer
 exports.removeSpecificCartItem = async (req, res) => {
     try {
-        const cart = await Cart.findOneAndUpdate(
+        const cart = await ShoppingCart.findOneAndUpdate(
             { user: req.user._id },
             { $pull: { cartItems: { _id: req.params.itemId } } },
             { new: true }
@@ -142,7 +148,7 @@ exports.removeSpecificCartItem = async (req, res) => {
 // @access  Private/Customer
 exports.clearCart = async (req, res) => {
     try {
-        await Cart.findOneAndDelete({ user: req.user._id  });
+        await ShoppingCart.findOneAndDelete({ user: req.user._id  });
         res.status(204).send();
     } catch (error) {
         res.status(500).json({ status: 'error', message: error.message });
@@ -156,7 +162,7 @@ exports.updateCartItemQuantity = async (req, res) => {
     try {
         const { quantity } = req.body;
 
-        const cart = await Cart.findOne({ user:req.user._id });
+        const cart = await ShoppingCart.findOne({ user:req.user._id });
         if (!cart) {
             return res.status(404).json({
                 status: 'error',

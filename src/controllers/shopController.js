@@ -15,12 +15,12 @@ const createVoucher = async (req, res) => {
     if (!shop) throw new Error("Shop not found");
 
     // input voucher from user
-    const { name, value, expired, valid } = req.body;
+    const { name, value, expired, valid,image } = req.body;
     let active = true;
     let code = generateRandomCode(20);
 
     // check conditions input
-    if (!name || !code || !value || !expired || !valid)
+    if (!name || !code || !value || !expired || !valid,!image)
       throw new Error("Missing required fields");
 
     if (new Date(expired).getTime() < currentDate || new Date(valid).getTime() < currentDate)
@@ -42,7 +42,8 @@ const createVoucher = async (req, res) => {
       expired: expired,
       shopId: shop._id, 
       isActive: active,
-      isDeleted: false
+      isDeleted: false,
+      image: image,
     });
     res.status(201).json(newVoucher);
   } catch (error) {
@@ -74,6 +75,34 @@ const getAllVoucher = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+const getAllVoucherForShop = async (req, res) => {
+  try {
+    const { id } = req.params; // Lấy shopId từ params
+    const { sort } = req.query; // Lấy sort từ query string
+
+    // Ánh xạ các giá trị từ dropdown đến các điều kiện lọc
+    const filterConditions = {
+      'All Vouchers': { shopId: id }, // Lấy tất cả voucher của shop
+      'Active': { shopId: id, isActive: true }, // Voucher đang hoạt động
+      'Deactive': { shopId: id, isActive: false }, // Voucher không hoạt động
+      'No delete': { shopId: id, isDeleted: false }, // Voucher chưa bị xóa
+      'Deleted': { shopId: id, isDeleted: true }, // Voucher đã bị xóa
+    };
+
+    // Lấy điều kiện lọc từ filterConditions, mặc định là 'All Vouchers'
+    const filterCondition = filterConditions[sort] || filterConditions['All Vouchers'];
+
+    // Tìm voucher dựa trên điều kiện lọc
+    const vouchers = await Voucher.find(filterCondition);
+
+    res.status(200).json(vouchers); // Trả về danh sách vouchers
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
 
 // active or deactive vouchers
 const activeOrDeactiveVoucher = async (req, res) => {
@@ -115,9 +144,9 @@ const activeOrDeactiveVoucher = async (req, res) => {
 const deleteVoucher = async (req, res) => {
   try {
     // find voucher by id and update it, set isDeleted to true
-    const voucher = await Voucher.findByIdAndUpdate(req.params.id,{isDeleted: true},{new: true});
+    const voucher = await Voucher.findByIdAndUpdate(req.params.id,{isDeleted: true, isActive: false},{new: true});
     if (!voucher) throw new Error("Voucher not found");
-    res.status(200).json({ message: "Voucher deleted successfully" });
+    res.status(200).json({ message: "Voucher deleted successfully" });;
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -402,8 +431,9 @@ const getWithdrawsByShopId = async (req, res) => {
   }
 };
 
+
 module.exports = {
-   createVoucher,
+  createVoucher,
   getValueVoucher,
   getAllVoucher,
   activeOrDeactiveVoucher,
@@ -417,5 +447,6 @@ module.exports = {
   updateShopInfo,
   switchCustomer,
   createWithdrawRequest,
-  getWithdrawsByShopId
+  getWithdrawsByShopId,
+  getAllVoucherForShop
 };

@@ -291,7 +291,6 @@ module.exports = {
   showAllRegisterForm,
   showAllUser,
   activeOrDeactive,
-  updateWithdrawRequest,
   searchAccount,
   getAllWithdraws,
   getWithdrawById

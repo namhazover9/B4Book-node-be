@@ -140,38 +140,7 @@ exports.getCustomerOrders = async (req, res) => {
 // @route   GET /:orderId 
 // @access  Private/Shop-Customer-Admin
 
-
-// exports.getOrderById = async (req, res) => {
-//   try {
-//     const { orderId } = req.params;
-//     // Tìm order dựa trên ID và Customer hiện tại
-//     const order = await Order.findOne({ _id: orderId });
-    
-//     // Kiểm tra nếu không tìm thấy Order
-//     if (!order) {
-//       return res.status(404).json({
-//         status: 'fail',
-//         message: 'Order not found or does not belong to this customer',
-//       });
-//     }
-
-
-//     res.status(200).json({
-//       status: 'success',
-//       message: 'Order retrieved successfully',
-//       data: order,
-//     });
-//   } catch (error) {
-//     console.error('Error retrieving order by ID:', error.message);
-//     res.status(500).json({
-//       status: 'error',
-//       message: 'Something went wrong while retrieving the order',
-//       error: error.message,
-//     });
-//   }
-// };
-
-exports.getOrderById = async (req, res) => {
+exports.getOrderByIdForShop = async (req, res) => {
   try {
     const { orderId } = req.params;
     const userId = req.user._id; // Lấy ID của người dùng đang đăng nhập từ token
@@ -212,6 +181,46 @@ exports.getOrderById = async (req, res) => {
             orderItems: filteredOrderItems,
           },
         ],
+      },
+    });
+  } catch (error) {
+    console.error('Error retrieving order by ID:', error.message);
+    res.status(500).json({
+      status: 'error',
+      message: 'Something went wrong while retrieving the order',
+      error: error.message,
+    });
+  }
+};
+
+
+exports.getOrderByIdForCustomer = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    // Tìm order dựa trên ID và populate các trường từ customer
+    const order = await Order.findOne({ _id: orderId }).populate('customer', 'email userName address phoneNumber avartar'); 
+    // Kiểm tra nếu không tìm thấy Order
+    if (!order) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Order not found or does not belong to this customer',
+      });
+    }
+
+    // Tạo các biến hiển thị thay vì thay đổi giá trị trong database
+    // const displayShippedDate = order.shippedDate ? order.shippedDate.toISOString() : "Not ship";
+    // const displayDeliveredDate = order.deliveredDate ? order.deliveredDate.toISOString() : "Not deliver";
+
+    // Trả về dữ liệu với các trường hiển thị
+    res.status(200).json({
+      status: 'success',
+      message: 'Order retrieved successfully',
+      data: {
+        ...order.toObject(), // Chuyển đổi order thành đối tượng thuần
+        // shippedDate: displayShippedDate,
+        // deliveredDate: displayDeliveredDate,
+        customer: order.customer, // Bao gồm thông tin customer đã populate
       },
     });
   } catch (error) {
@@ -324,7 +333,6 @@ exports.getAllOrderByShop = async (req, res) => {
 
 
 
-
 // @desc    Update Order Status 
 // @route   PATCH /:orderId/status
 // @access  Private/Shop
@@ -384,7 +392,6 @@ exports.updateOrderStatus = async (req, res) => {
 };
 
 
-3
 // @desc    Cancel Order
 // @route   PATCH /:orderId/cancel
 // @access  Private/Shop-Customer
@@ -424,6 +431,7 @@ exports.cancelOrder= async (req, res) => {
     });
   }
 };
+
 
 exports.searchOrder = async (req, res) => {
   try {
