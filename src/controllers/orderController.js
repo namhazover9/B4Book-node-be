@@ -144,10 +144,10 @@ exports.getOrderByIdForShop = async (req, res) => {
   try {
     const { orderId } = req.params;
     const userId = req.user._id; // Lấy ID của người dùng đang đăng nhập từ token
-
-    // Tìm order dựa trên ID
-    const order = await Order.findOne({ _id: orderId }).populate('shops.shopId');
-
+    // Tìm order dựa trên ID và populate cả thông tin customer
+    const order = await Order.findOne({ _id: orderId })
+      .populate('shops.shopId', 'name') // Populate thông tin shop (có thể thêm các trường cần thiết)
+      .populate('customer', 'email userName address phoneNumber avartar'); // Populate thông tin customer
     // Kiểm tra nếu không tìm thấy Order
     if (!order) {
       return res.status(404).json({
@@ -155,10 +155,8 @@ exports.getOrderByIdForShop = async (req, res) => {
         message: 'Order not found or does not belong to this customer',
       });
     }
-
     // Lọc các shop trong order để chỉ lấy shop của người dùng hiện tại
-    const shop = order.shops.find(shop => shop.shopId._id.toString() === userId.toString());
-
+    const shop = order.shops.find((shop) => shop.shopId._id.toString() === userId.toString());
     // Nếu không tìm thấy shop của người dùng trong order
     if (!shop) {
       return res.status(404).json({
@@ -166,25 +164,25 @@ exports.getOrderByIdForShop = async (req, res) => {
         message: 'No order items found for the current shop',
       });
     }
-
     // Lấy danh sách các order items của shop hiện tại
     const filteredOrderItems = shop.orderItems;
-
+    // Trả về dữ liệu với thông tin shop và customer
     res.status(200).json({
       status: 'success',
       message: 'Order retrieved successfully',
       data: {
-        ...order.toObject(),
+        ...order.toObject(), // Chuyển order thành đối tượng thuần
         shops: [
           {
-            ...shop.toObject(),
-            orderItems: filteredOrderItems,
+            ...shop.toObject(), // Chỉ bao gồm shop của user hiện tại
+            orderItems: filteredOrderItems, // Lọc order items
           },
         ],
+        customer: order.customer, // Bao gồm thông tin customer đã populate
       },
     });
   } catch (error) {
-    console.error('Error retrieving order by ID:', error.message);
+    console.error('Error retrieving order by ID for shop:', error.message);
     res.status(500).json({
       status: 'error',
       message: 'Something went wrong while retrieving the order',
@@ -198,8 +196,17 @@ exports.getOrderByIdForCustomer = async (req, res) => {
   try {
     const { orderId } = req.params;
 
-    // Tìm order dựa trên ID và populate các trường từ customer
-    const order = await Order.findOne({ _id: orderId }).populate('customer', 'email userName address phoneNumber avartar'); 
+    // Tìm order dựa trên ID và populate các trường cần thiết
+    const order = await Order.findOne({ _id: orderId })
+      .populate({
+        path: 'shops.shopId', // Populate thông tin shop
+        select: 'shopName',
+      })
+      .populate({
+        path: 'shops.orderItems.product', // Populate thông tin sản phẩm trong orderItems
+        select: 'name description images',
+      });
+
     // Kiểm tra nếu không tìm thấy Order
     if (!order) {
       return res.status(404).json({
@@ -208,19 +215,26 @@ exports.getOrderByIdForCustomer = async (req, res) => {
       });
     }
 
-    // Tạo các biến hiển thị thay vì thay đổi giá trị trong database
-    // const displayShippedDate = order.shippedDate ? order.shippedDate.toISOString() : "Not ship";
-    // const displayDeliveredDate = order.deliveredDate ? order.deliveredDate.toISOString() : "Not deliver";
-
     // Trả về dữ liệu với các trường hiển thị
     res.status(200).json({
       status: 'success',
       message: 'Order retrieved successfully',
       data: {
         ...order.toObject(), // Chuyển đổi order thành đối tượng thuần
-        // shippedDate: displayShippedDate,
-        // deliveredDate: displayDeliveredDate,
-        customer: order.customer, // Bao gồm thông tin customer đã populate
+        shops: order.shops.map((shop) => ({
+          shopId: shop.shopId, // Thông tin shop đã populate
+          orderItems: shop.orderItems.map((item) => ({
+            product: item.product, // Thông tin sản phẩm đã populate
+            title: item.title, // Lấy trực tiếp từ orderItems
+            quantity: item.quantity, // Lấy trực tiếp từ orderItems
+            price: item.price, // Lấy trực tiếp từ orderItems
+            images: item.images, // Lấy trực tiếp từ orderItems
+          })),
+          shippingMethod: shop.shippingMethod,
+          shippingCost: shop.shippingCost,
+          voucherDiscount: shop.voucherDiscount,
+          totalShopPrice: shop.totalShopPrice,
+        })),
       },
     });
   } catch (error) {
@@ -232,6 +246,9 @@ exports.getOrderByIdForCustomer = async (req, res) => {
     });
   }
 };
+
+
+
 
 
 // @desc    Get All Orders by Status
