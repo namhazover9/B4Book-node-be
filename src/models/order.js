@@ -24,12 +24,14 @@ const orderSchema = new mongoose.Schema(
             images: [{ type: String, required: true }],
           },
         ],
-        shippingMethod: {
-          type: String,
-          enum: ['Standard', 'Express'],
-          required: true,
-        },
         shippingCost: { type: Number, required: true},
+        status: {
+          type: String,
+          enum: ['Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'],
+          default: 'Pending',
+        },
+        shippedDate: { type: Date, default: null },
+        deliveredDate: { type: Date, default: null },
         voucherDiscount: { type: mongoose.Schema.Types.ObjectId, ref: 'Voucher'},
         totalShopPrice: { type: Number},
       },
@@ -45,14 +47,7 @@ const orderSchema = new mongoose.Schema(
     },
     totalOrderPrice: { type: Number, required: true }, // Tổng giá trị đơn hàng (bao gồm phí vận chuyển)
     isPaid: { type: Boolean, default: false },
-    paidAt: { type: Date },
-    shippedDate: { type: Date, default: null },
-    deliveredDate: { type: Date, default: null },
-    status: {
-      type: String,
-      enum: ['Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'],
-      default: 'Pending',
-    },
+    paidAt: { type: Date }
   },
   { timestamps: true }
 );

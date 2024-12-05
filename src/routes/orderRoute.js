@@ -23,7 +23,7 @@ router.post('/place-order-vn', isAuth,  OrderController.createVNpay);
 
 
 router.patch("/:orderId/cancel", OrderController.cancelOrder);
-router.patch('/:orderId/status', isShop, OrderController.updateOrderStatus);
+router.patch('/:orderId/shops/:shopId/status', isShop, OrderController.updateOrderStatus);
 
 // router.patch("/:orderId/confirmed", OrderController.orderConfirmedStatus);
 // router.patch("/:orderId/shipped", OrderController.orderShippedStatus);

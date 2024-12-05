@@ -526,21 +526,9 @@ const getAllWishList = async (req, res) => {
 // update profile
 const updateProfileUser = async (req, res) => {
   try {
-    const updates = req.body;
-    const userPass = await User.findById(req.user._id );
-    // Kiểm tra xem passWord có giá trị hợp lệ hay không
-    if (updates.passWord !== userPass.passWord) {
-      
-      // Hash password nếu passWord được cung cấp
-      const hash = await bcrypt.hash(updates.passWord,parseInt(process.env.SALT_ROUND));
-      updates.passWord = hash;
-    } else {
-      // Xóa passWord nếu không muốn cập nhật nó
-      delete updates.passWord;
-    }
-
+    const {email,userName, phoneNumber} = req.body;
     // Tìm user và cập nhật
-    const user = await User.findOneAndUpdate(req.user._id, updates, {
+    const user = await User.findOneAndUpdate(req.user._id, {email:email, userName:userName, phoneNumber:phoneNumber}, {
       new: true,
     });
 
