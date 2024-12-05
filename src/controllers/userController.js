@@ -466,22 +466,10 @@ const addWishlistProduct = async (req, res) => {
 // delete product from wishlist
 const deleteWishlistProduct = async (req, res) => {
   try {
-    // find wishlist product by id and delete it
-    const product = await Product.findById(req.params.id);
-    if (!product) {
-      return res.status(404).send({ message: "Product not found" });
-    }
-    const wishlistProduct = await WishlistProduct.findOneAndDelete({
-      product: product._id,
-      user: req.user._id ,
-    })
-    
-    // check if wishlist not found
+    const wishlistProduct = await WishlistProduct.findByIdAndDelete(req.params.id);
     if (!wishlistProduct ) {
       return res.status(404).send({ message: "Product does not exist in wishlist" });
     }
-
-    // respond status with success message
     res.status(200).send({ message: "Product deleted from wishlist" });
   } catch (error) {
     console.log(error);
@@ -490,24 +478,57 @@ const deleteWishlistProduct = async (req, res) => {
 };
 
 
+const getAllWishList = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const page = parseInt(req.query.page) || 1; // Trang hiện tại (mặc định là 1)
+    const limit = parseInt(req.query.limit) || 10; // Số mục mỗi trang (mặc định là 10)
+    const skip = (page - 1) * limit; // Số mục cần bỏ qua
+    
+    // Lấy danh sách wishlist của user
+    const wishlist = await WishlistProduct.find({ user: userId })
+      .populate({
+        path: "product",
+        model: "Product",
+        select: "title description price images author publisher stock category",
+      });
+
+    // Kiểm tra nếu danh sách rỗng
+    if (!wishlist || wishlist.length === 0) {
+      return res.status(200).json({
+        status: 'success',
+        currentPage: page,
+        totalPages: 0,
+        numOfWishlistItems: 0,
+        totalWishlistItems: 0,
+        data: [], // Trả về mảng trống
+      });
+    }
+
+    // Paginate danh sách wishlist
+    const paginatedWishlistItems = wishlist.slice(skip, skip + limit);
+
+    res.status(200).json({
+      status: 'success',
+      currentPage: page,
+      totalPages: Math.ceil(wishlist.length / limit),
+      numOfWishlistItems: paginatedWishlistItems.length,
+      totalWishlistItems: wishlist.length,
+      data: paginatedWishlistItems,
+    });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+};
+
+
+
 // update profile
 const updateProfileUser = async (req, res) => {
   try {
-    const updates = req.body;
-    const userPass = await User.findById(req.user._id );
-    // Kiểm tra xem passWord có giá trị hợp lệ hay không
-    if (updates.passWord !== userPass.passWord) {
-      
-      // Hash password nếu passWord được cung cấp
-      const hash = await bcrypt.hash(updates.passWord,parseInt(process.env.SALT_ROUND));
-      updates.passWord = hash;
-    } else {
-      // Xóa passWord nếu không muốn cập nhật nó
-      delete updates.passWord;
-    }
-
+    const {email,userName, phoneNumber} = req.body;
     // Tìm user và cập nhật
-    const user = await User.findOneAndUpdate(req.user._id, updates, {
+    const user = await User.findOneAndUpdate(req.user._id, {email:email, userName:userName, phoneNumber:phoneNumber}, {
       new: true,
     });
 
@@ -587,5 +608,6 @@ module.exports = {
   deleteAddress,
   sendVerifyCode,
   showDetailShop,
-  switchShop
+  switchShop,
+  getAllWishList
 };

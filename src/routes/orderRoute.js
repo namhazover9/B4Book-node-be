@@ -13,7 +13,7 @@ router.get("/search",isShop, OrderController.searchOrder);
 router.get("/vnpay-return", OrderController.vnpayReturn);
 router.get("/customer/:id", isAuth, OrderController.getCustomerOrders);
 router.get("/:orderId", isShop, OrderController.getOrderByIdForShop);
-
+router.get("/getDetailOrder/:orderId", isAuth, OrderController.getOrderByIdForCustomer);
 // router.post("/summary", isAuth, OrderController.createOrder);
 router.post("/place-order-stp", isAuth, OrderController.placeOrderSTP);
 router.post('/stripe/webhook', isAuth, bodyParser.raw({ type: 'application/json' }), OrderController.stripeWebhook)
