@@ -666,7 +666,7 @@ try {
       totalOrderPrice += shop.totalShopPrice;
     }  
 
-    if (paymentMethod === 'VNPAY') {
+    if (paymentMethod === 'Credit Card') {
       // Create the order
       const order = await Order.create({
         customer: customerId,

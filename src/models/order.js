@@ -24,11 +24,6 @@ const orderSchema = new mongoose.Schema(
             images: [{ type: String, required: true }],
           },
         ],
-        shippingMethod: {
-          type: String,
-          enum: ['Standard', 'Express'],
-          required: true,
-        },
         shippingCost: { type: Number, required: true},
         voucherDiscount: { type: mongoose.Schema.Types.ObjectId, ref: 'Voucher'},
         totalShopPrice: { type: Number},
