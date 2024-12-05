@@ -338,8 +338,7 @@ exports.getAllOrderByShop = async (req, res) => {
 // @access  Private/Shop
 exports.updateOrderStatus = async (req, res) => {
   try {
-    const { orderId } = req.params;
-
+    const { orderId, shopId } = req.params; // Lấy thêm shopId từ params
     const order = await Order.findById(orderId);
 
     if (!order) {
@@ -349,37 +348,46 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    // Xác định trạng thái tiếp theo
-    let nextStatus;
-    if (order.status === 'Pending') {
-      nextStatus = 'Confirmed';
-    } else if (order.status === 'Confirmed') {
-      nextStatus = 'Shipped';
-    } else if (order.status === 'Shipped') {
-      nextStatus = 'Delivered';
-    } else if (order.status === 'Delivered') {
-      return res.status(400).json({
+    // Tìm shop cần cập nhật trong mảng shops
+    const shop = order.shops.find((s) => s.shopId.toString() === shopId);
+    if (!shop) {
+      return res.status(404).json({
         status: 'fail',
-        message: 'Order already delivered',
+        message: 'Shop not found in this order',
       });
     }
 
-    const updateFields = { status: nextStatus };
+    // Xác định trạng thái tiếp theo
+    let nextStatus;
+    if (shop.status === 'Pending') {
+      nextStatus = 'Confirmed';
+    } else if (shop.status === 'Confirmed') {
+      nextStatus = 'Shipped';
+    } else if (shop.status === 'Shipped') {
+      nextStatus = 'Delivered';
+    } else if (shop.status === 'Delivered') {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Shop order already delivered',
+      });
+    }
 
-    // Thêm thuộc tính ngày cho các trạng thái cụ thể
+    // Cập nhật trạng thái và ngày tương ứng
+    shop.status = nextStatus;
     if (nextStatus === 'Shipped') {
-      updateFields.shippedDate = new Date();
+      shop.shippedDate = new Date();
     }
     if (nextStatus === 'Delivered') {
-      updateFields.deliveredDate = new Date();
+      shop.deliveredDate = new Date();
     }
 
-    const updatedOrder = await Order.findByIdAndUpdate(orderId, updateFields, { new: true });
+    // Lưu thay đổi
+    await order.save();
 
     res.status(200).json({
       status: 'success',
-      message: `Order status updated to ${nextStatus}`,
-      data: updatedOrder,
+      message: `Shop's order status updated to ${nextStatus}`,
+      data: order,
     });
   } catch (error) {
     console.error('Error updating order status:', error.message);
@@ -390,6 +398,7 @@ exports.updateOrderStatus = async (req, res) => {
     });
   }
 };
+
 
 
 // @desc    Cancel Order
@@ -593,7 +602,7 @@ exports.placeOrderSTP = async (req, res) => {
           },
           quantity: item.quantity,
         })),
-        success_url: "https://39d3-113-160-225-96.ngrok-free.app/order/stripe/webhook", // Replace with your frontend success page
+        success_url: `${process.env.CLIENT_URL}/order/stripe/webhook`, // Replace with your frontend success page
         cancel_url: `${process.env.CLIENT_URL}/cart`,   // Replace with your frontend cancel page
         metadata: {
           orderId: order._id.toString(),
@@ -626,6 +635,7 @@ exports.stripeWebhook = async (req, res) => {
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET; // Secret từ Stripe Dashboard
   const sig = req.headers['stripe-signature'];
 
+  
   let event;
   try {
     event = stripe.webhooks.constructEvent(req.rawBody, sig, endpointSecret);
@@ -640,9 +650,11 @@ exports.stripeWebhook = async (req, res) => {
 
     try {
       // Tìm đơn hàng tương ứng dựa trên session ID
-      const order = await Order.findOne({ stripeSessionId: session.id }).populate('shops.orderItems.product');
+      const orderId = session.metadata.orderId;
+
+      const order = await Order.findById(orderId);
       if (!order) {
-        console.error('Order not found for session ID:', session.id);
+        console.error('Order not found:', orderId);
         return res.status(404).json({ message: 'Order not found' });
       }
 
@@ -650,6 +662,8 @@ exports.stripeWebhook = async (req, res) => {
       order.isPaid = true;
       order.paidAt = new Date();
       await order.save();
+
+      console.log('Payment succeeded for order:', orderId);
 
       // Cập nhật tồn kho và doanh số
       for (const shop of order.shops) {
@@ -691,10 +705,7 @@ exports.stripeWebhook = async (req, res) => {
         console.error('Error sending confirmation email:', emailError.message);
       }
 
-      return res.status(200).json({
-        status: 'success',
-        message: 'Transaction verified successfully',
-      });
+      res.status(200).send('Webhook received');
     } catch (error) {
       console.error('Error processing Stripe webhook:', error.message);
       return res.status(500).json({
@@ -822,6 +833,7 @@ try {
       const randomShippingCost = () => Math.floor(Math.random() * (8 - 4 + 1)) + 4;
       // Cộng phí vận chuyển
       shop.shippingCost = randomShippingCost();
+      shop.status = 'Pending';
       const shippingCost = shop.shippingCost;
       console.log(shippingCost);
       shopTotalPrice += shippingCost;
@@ -867,8 +879,7 @@ try {
         shops,
         shippingAddress,
         paymentMethod,
-        totalOrderPrice,
-        status: 'Pending',
+        totalOrderPrice
       });
 
       process.env.TZ = 'Asia/Ho_Chi_Minh';
