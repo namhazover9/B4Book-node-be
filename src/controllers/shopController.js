@@ -8,19 +8,22 @@ const createVoucher = async (req, res) => {
 
   try {
     // find shop base on user._id
-    const shop = await Shop.findOne({ user:req.user._id });
+    const shop = await Shop.findById(req.user._id);
+    if (!shop) throw new Error("Shop not found");
+   
     // create current date to compare with valid date and expired date
     const currentDate = new Date().setHours(0, 0, 0, 0);
   
-    if (!shop) throw new Error("Shop not found");
+   
 
     // input voucher from user
     const { name, value, expired, valid } = req.body;
+    const image = req.files.map((file) => file.path);
     let active = true;
     let code = generateRandomCode(20);
 
     // check conditions input
-    if (!name || !code || !value || !expired || !valid)
+    if (!name || !value || !expired || !valid)
       throw new Error("Missing required fields");
 
     if (new Date(expired).getTime() < currentDate || new Date(valid).getTime() < currentDate)
@@ -34,7 +37,7 @@ const createVoucher = async (req, res) => {
     }
 
     // Create new voucher 
-    const newVoucher = new Voucher({
+    const newVoucher = await Voucher.create({
       name,
       code: code,
       value,
@@ -42,9 +45,10 @@ const createVoucher = async (req, res) => {
       expired: expired,
       shopId: shop._id, 
       isActive: active,
-      isDeleted: false
+      isDeleted: false,
+      image: image,
     });
-    res.status(201).json(newVoucher);
+    res.status(200).json(newVoucher);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -74,6 +78,34 @@ const getAllVoucher = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+const getAllVoucherForShop = async (req, res) => {
+  try {
+    const { id } = req.params; // Lấy shopId từ params
+    const { sort } = req.query; // Lấy sort từ query string
+
+    // Ánh xạ các giá trị từ dropdown đến các điều kiện lọc
+    const filterConditions = {
+      'All Vouchers': { shopId: id }, // Lấy tất cả voucher của shop
+      'Active': { shopId: id, isActive: true }, // Voucher đang hoạt động
+      'Deactive': { shopId: id, isActive: false }, // Voucher không hoạt động
+      'No delete': { shopId: id, isDeleted: false }, // Voucher chưa bị xóa
+      'Deleted': { shopId: id, isDeleted: true }, // Voucher đã bị xóa
+    };
+
+    // Lấy điều kiện lọc từ filterConditions, mặc định là 'All Vouchers'
+    const filterCondition = filterConditions[sort] || filterConditions['All Vouchers'];
+
+    // Tìm voucher dựa trên điều kiện lọc
+    const vouchers = await Voucher.find(filterCondition);
+
+    res.status(200).json(vouchers); // Trả về danh sách vouchers
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
 
 // active or deactive vouchers
 const activeOrDeactiveVoucher = async (req, res) => {
@@ -115,9 +147,9 @@ const activeOrDeactiveVoucher = async (req, res) => {
 const deleteVoucher = async (req, res) => {
   try {
     // find voucher by id and update it, set isDeleted to true
-    const voucher = await Voucher.findByIdAndUpdate(req.params.id,{isDeleted: true},{new: true});
+    const voucher = await Voucher.findByIdAndUpdate(req.params.id,{isDeleted: true, isActive: false},{new: true});
     if (!voucher) throw new Error("Voucher not found");
-    res.status(200).json({ message: "Voucher deleted successfully" });
+    res.status(200).json({ message: "Voucher deleted successfully" });;
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -126,17 +158,55 @@ const deleteVoucher = async (req, res) => {
 // update voucher 
 const updateVoucher = async (req, res) => {
   try {
-    // find voucher by id and update it
-    const voucher = await Voucher.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
+    // Extract image files if provided
+    const image = req.files?.map((file) => file.path);
+
+    // Extract fields to update from req.body
+    const { name, value, valid, expired, isActive } = req.body;
+    // Build update object
+    const updateFields = {
+      ...(name && { name }),
+      ...(value && { value }),
+      ...(valid && { valid }),
+      ...(expired && { expired }),
+      ...(isActive !== undefined && { isActive }),
+    };
+
+    // Include images if provided
+    if (image && image.length > 0) {
+      updateFields.image = image;
+    }
+
+    // Find voucher by id and update it
+    const voucher = await Voucher.findByIdAndUpdate(req.params.id, updateFields, {
+      new: true, // Return the updated document
     });
+    
     if (!voucher) throw new Error("Voucher not found");
-    res.status(200).json({ message: "Voucher updated successfully" });
+
+    res.status(200).json({ message: "Voucher updated successfully", voucher });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
+const searchVoucherForShop = async (req, res) => {
+  try {
+    const { name,shop } = req.query;
+   if(shop){
+    const shopId = await Shop.findOne({ _id: shop });
+    if (!shopId) throw new Error("Shop not found");
+    const vouchers = await Voucher.find({ shopId: shopId._id,name: { $regex: name, $options: 'i' } });
+    res.status(200).json(vouchers);
+   }
+   else{
+    const vouchers = await Voucher.find({ name: { $regex: name, $options: 'i' } });
+    res.status(200).json(vouchers);
+   }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
 // filter shop function
 const getAllShop = async (req, res) => {
   const { name, page = 1, limit = 10 } = req.query;
@@ -192,15 +262,116 @@ const searchShop = async (req, res) => {
   }
 };
 
-// @desc    Update a product
-// @route   PUT /:id
+
+// @desc    Add new address
+// @route   POST /address/add
+// @access  Private/Customer
+const addAddress = async (req, res) => {
+  try {
+    const { street, city, country } = req.body;
+
+    if (!street || !city || !country) {
+      return res.status(400).json({ message: "All address fields are required" });
+    }
+
+    // Tìm Shop hiện tại
+    const shop = await Shop.findById(req.user._id);
+    if (!shop) throw new Error("Shop not found");
+
+    // Đặt tất cả địa chỉ hiện tại `isDefault` thành false
+    shop.address.forEach(address => {
+      address.isDefault = false;
+    });
+
+    // Thêm địa chỉ mới với `isDefault: true`
+    shop.address.push({
+      street,
+      city,
+      country,
+      isDefault: true,
+    });
+
+  
+    await shop.save();
+
+    res.status(201).json({ message: "Address added successfully", address: shop.address });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Edit address
+// @route   PUT /address/update/:id
+// @access  Private/Customer
+const updateAddress = async (req, res) => {
+  try {
+    const { street, city, country, isDefault } = req.body;
+    const { id } = req.params; // Lấy addressId từ route parameters
+
+    const shop = await Shop.findById(req.user._id);
+    if (!shop) throw new Error("shop not found");
+
+    // Tìm địa chỉ cần cập nhật
+    const address = shop.address.id(id);
+    if (!address) throw new Error("Address not found");
+
+    // Cập nhật thông tin địa chỉ
+    if (street) address.street = street;
+    if (city) address.city = city;
+    if (country) address.country = country;
+
+    // Nếu `isDefault: true`, cập nhật tất cả các địa chỉ khác thành `false`
+    if (isDefault === true) {
+      shop.address.forEach(addr => (addr.isDefault = false));
+      address.isDefault = true;
+    }
+
+    await shop.save();
+
+    res.status(200).json({ message: "Address updated successfully", addresses: user.address });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Delete an address
+// @route   DELETE /address/delete/:id
+// @access  Private/Customer
+const deleteAddress = async (req, res) => {
+  try {
+    const { id } = req.params; // Lấy addressId từ route parameters
+
+    const shop = await Shop.findById(req.user._id);
+    if (!shop) throw new Error("User not found");
+
+    // Tìm và xóa địa chỉ trong mảng
+    const addressIndex = shop.address.findIndex(address => address._id.toString() === id);
+    if (addressIndex === -1) throw new Error("Address not found");
+
+    shop.address.splice(addressIndex, 1); // Xóa địa chỉ
+
+    // Nếu địa chỉ vừa xóa là mặc định và vẫn còn địa chỉ khác, đặt địa chỉ đầu tiên làm mặc định
+    if (shop.address.length > 0 && shop.address.every(addr => addr.isDefault === false)) {
+      shop.address[0].isDefault = true;
+    }
+
+    await shop.save();
+
+    res.status(200).json({ message: "Address deleted successfully", addresses: shop.address });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update shop information
+// @route   PUT /shop/update
 // @access  Private/Shop
 const updateShopInfo = async (req, res) => {
   try {
     const {
       shopEmail,
       shopName,
-      shopAddress,
+      address,
       phoneNumber,
       wallet,
     } = req.body;
@@ -215,7 +386,7 @@ const updateShopInfo = async (req, res) => {
     // Cập nhật các trường
     shop.shopEmail = shopEmail || shop.shopEmail;
     shop.shopName = shopName || shop.shopName;
-    shop.shopAddress = shopAddress || shop.shopAddress;
+    shop.address = address || shop.address;
     shop.phoneNumber = phoneNumber || shop.phoneNumber;
     shop.wallet = wallet || shop.wallet;
     shop.images = images || shop.images;
@@ -301,8 +472,9 @@ const getWithdrawsByShopId = async (req, res) => {
   }
 };
 
+
 module.exports = {
-   createVoucher,
+  createVoucher,
   getValueVoucher,
   getAllVoucher,
   activeOrDeactiveVoucher,
@@ -310,8 +482,13 @@ module.exports = {
   updateVoucher,
   searchShop,
   getAllShop,
+  addAddress,
+  updateAddress,
+  deleteAddress,
   updateShopInfo,
   switchCustomer,
   createWithdrawRequest,
-  getWithdrawsByShopId
+  getWithdrawsByShopId,
+  getAllVoucherForShop,
+  searchVoucherForShop
 };

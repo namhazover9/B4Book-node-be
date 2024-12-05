@@ -4,7 +4,7 @@ const GoogleStrategy = require("passport-google-token").Strategy;
 const FacebookStrategy = require("passport-facebook-token");
 const User = require('./models/user');
 const Role = require('./models/role');
-
+const bcrypt = require("bcryptjs");
 passport.serializeUser((user, done) => {
   done(null, user);
 });
@@ -23,7 +23,7 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        console.log(profile);  // In toàn bộ profile để kiểm tra
+        const hash = await bcrypt.hash("xinchaocacban", 10);
         const { id, name, emails } = profile;
         const { familyName, givenName } = name;
         const email = emails[0].value;
@@ -31,8 +31,7 @@ passport.use(
         // Lấy avatar từ trường picture
         const avartar = profile._json.picture || '';
         // Kiểm tra người dùng đã tồn tại hay chưa
-        let user = await User.findOne({ googleId: id, authProvider: 'google' });
-
+        let user = await User.findOne({authProvider: 'google',email:email });
         if (!user) {
           // Tìm vai trò mặc định 'user' trong cơ sở dữ liệu
           const defaultRole = await Role.findOne({ name: 'Customer' });
@@ -51,6 +50,7 @@ passport.use(
             googleId: id,
             avartar: avartar,  // Lưu avatar vào trường avatar
             role: [defaultRole._id],  // Gán ObjectId của vai trò vào trường role
+            passWord: hash
           });
 
           await user.save();
@@ -88,7 +88,7 @@ passport.use(
         const avatar = profile._json.picture ? profile._json.picture.data.url : '';
 
         // Kiểm tra người dùng đã tồn tại hay chưa
-        let user = await User.findOne({ facebookId: id, authProvider: 'facebook' });
+        let user = await User.findOne({ email: email, authProvider: 'facebook' });
 
         if (!user) {
           // Tìm vai trò mặc định 'user' trong cơ sở dữ liệu

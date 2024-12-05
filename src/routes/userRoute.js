@@ -62,8 +62,11 @@ router.post("/sendVerify", userController.sendVerifyCode);
 router.put("/addPassword",isAuth, userController.addPassword);
 router.post('/addWishlistProduct/:id',isAuth,userController.addWishlistProduct);
 router.delete("/deleteWishlistProduct/:id",isAuth,userController.deleteWishlistProduct);
-router.put("/forgotPassword", userController.forgotPassword);
+router.put("/resetPassword", userController.resetPassword);
 router.put("/updateProfile",isAuth, userController.updateProfileUser);
+router.post("/address/add", isAuth, userController.addAddress);
+router.put("/address/update/:id", isAuth, userController.updateAddress);
+router.delete("/address/delete/:id", isAuth, userController.deleteAddress);
 router.get("/switchShop",isAuth, userController.switchShop);
 router.get("/showDetailShop/:id", userController.showDetailShop);
 
