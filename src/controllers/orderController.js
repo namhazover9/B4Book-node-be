@@ -487,18 +487,163 @@ exports.searchOrder = async (req, res) => {
   }
 };
 
-
-
-// ------------------------------------
-
-// @desc    Create Stripe Checkout Session
+// @desc    Place an Order
 // @route   POST /order/place-order
 // @access  Private/Customer
+exports.placeOrder = async (req, res) => {
+  try {
+    const { shops, shippingAddress, paymentMethod } = req.body;
+    const customerId = req.user._id;
 
+
+    if (!shops || shops.length === 0) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Shops cannot be empty',
+      });
+    }
+
+    let totalOrderPrice = 0;
+    const orderItems = [];
+
+    // Duyệt qua từng shop để tạo danh sách đơn hàng
+    for (const shop of shops) {
+      let shopTotalPrice = 0;
+      for (const item of shop.orderItems) {
+        const product = await Product.findById(item.product);
+        if (!product || product.stock < item.quantity) {
+          return res.status(400).json({
+            status: 'fail',
+            message: `Product out of stock or not available: ${item.product}`,
+          });
+        }
+
+        const itemTotal = product.price * item.quantity;
+        shopTotalPrice += itemTotal;
+
+        orderItems.push({
+          product: product._id,
+          title: product.title,
+          price: product.price,
+          quantity: item.quantity,
+          images: product.images,
+        });
+
+        if(product){
+          product.stock -= item.quantity;
+          product.salesNumber += item.quantity;
+          await product.save();
+        }
+      }
+
+      const randomShippingCost = () => Math.floor(Math.random() * (8 - 4 + 1)) + 4;
+      // Cộng phí vận chuyển
+      shop.shippingCost = randomShippingCost();
+      const shippingCost = shop.shippingCost;
+      console.log(shippingCost);
+      shopTotalPrice += shippingCost;
+
+      const voucherDiscount = shop.voucherDiscount || 0;
+      
+      // Xử lý voucherDiscount (nếu có)
+      if (voucherDiscount) {
+        const voucher = await Voucher.findById(voucherDiscount);
+        if (!voucher) {
+          return res.status(400).json({
+            status: 'fail',
+            message: `Invalid voucher for shop: ${shop.shopId}`,
+          });
+        }
+
+        // Kiểm tra hiệu lực của voucher
+        const now = new Date();
+        if (!voucher.isActive || voucher.expired < now || voucher.validDate > now) {
+          return res.status(400).json({
+            status: 'fail',
+            message: `Voucher is expired or not valid yet: ${voucher.code}`,
+          });
+        }
+
+        // Tính giá trị giảm giá
+        const discountValue = (shopTotalPrice * voucher.value) / 100;
+        shopTotalPrice -= discountValue;
+      }
+
+      // Đảm bảo tổng giá không âm
+      shopTotalPrice = Math.max(shopTotalPrice, 0);
+
+      shop.totalShopPrice = shopTotalPrice;
+      
+      totalOrderPrice += shop.totalShopPrice;
+
+      shop.wallet = (shop.wallet || 0) + shop.totalShopPrice; // Cộng thêm tổng giá trị shop
+      await shop.save();
+      
+    }  
+
+    // If payment method is Credit Card, create Stripe Checkout Session
+    if (paymentMethod === 'COD') {
+
+      const order = await Order.create({
+        customer: customerId,
+        shops,
+        shippingAddress,
+        paymentMethod,
+        totalOrderPrice,
+        status: 'Pending',
+        isPaid: true,
+        paidAt: new Date()
+      });
+
+
+      const customer = await User.findOne({ _id: order.customer });
+
+      await Cart.findOneAndUpdate({ user: order.customer }, { cartItems: [] });
+
+      // Gửi email xác nhận đơn hàng
+      const email = customer.email; // Giả sử email khách hàng được lưu trong order
+      console.log(email);
+      const subject = "Order Confirmation";
+      const orderDetails = {
+      id: order._id,
+      date: order.createdAt.toISOString().slice(0, 10),
+      total: order.totalOrderPrice,
+      currency: "VND",
+      };
+
+      try {
+        await sendMail(email, subject, orderDetails);
+        console.log("Order confirmation email sent to:", email);
+      } catch (emailError) {
+        console.error("Error sending confirmation email:", emailError.message);
+      }
+  
+      res.redirect(`${process.env.CLIENT_URL}/orderconfirm`);
+    }
+
+    res.status(400).json({
+      status: 'fail',
+      message: 'Payment method not supported',
+    });
+  } catch (error) {
+    console.error('Error creating Stripe session:', error.message);
+    res.status(500).json({
+      status: 'error',
+      message: 'Something went wrong while creating Stripe session',
+      error: error.message,
+    });
+  }
+}
+
+// @desc    Create Stripe Checkout Session
+// @route   POST /order/place-order-stp
+// @access  Private/Customer
 exports.placeOrderSTP = async (req, res) => {
   try {
     const { shops, shippingAddress, paymentMethod } = req.body;
     const customerId = req.user._id;
+
+    const returnUrl = "http://localhost:8000";
 
     if (!shops || shops.length === 0) {
       return res.status(400).json({
@@ -578,6 +723,7 @@ exports.placeOrderSTP = async (req, res) => {
     // If payment method is Credit Card, create Stripe Checkout Session
     if (paymentMethod === 'Credit Card') {
 
+
       const order = await Order.create({
         customer: customerId,
         shops,
@@ -587,6 +733,8 @@ exports.placeOrderSTP = async (req, res) => {
         status: 'Pending',
       });
 
+
+      console.log('Order created 1:', order._id);
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         mode: 'payment',
@@ -602,7 +750,7 @@ exports.placeOrderSTP = async (req, res) => {
           },
           quantity: item.quantity,
         })),
-        success_url: `${process.env.CLIENT_URL}/order/stripe/webhook`, // Replace with your frontend success page
+        success_url: `${returnUrl}/order/stripe-return?order_id=${order._id}`, // Replace with your frontend success page
         cancel_url: `${process.env.CLIENT_URL}/cart`,   // Replace with your frontend cancel page
         metadata: {
           orderId: order._id.toString(),
@@ -631,165 +779,77 @@ exports.placeOrderSTP = async (req, res) => {
   }
 };
 
-exports.stripeWebhook = async (req, res) => {
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET; // Secret từ Stripe Dashboard
-  const sig = req.headers['stripe-signature'];
-
-  
-  let event;
+// @desc    Return Success/Fail from Stripe
+// @route   GET /order/stripe-return
+// @access  Private/Customer
+exports.stripeReturn = async (req, res) => { 
   try {
-    event = stripe.webhooks.constructEvent(req.rawBody, sig, endpointSecret);
-  } catch (err) {
-    console.error('Error verifying Stripe signature:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
+    const orderId = req.query.order_id;
+    let order = await Order.findOne({ _id: orderId }).populate('shops.orderItems.product');
 
-  // Xử lý các sự kiện từ Stripe
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
+    if (!order) {
+      return res.status(404).json({code: '01', message: 'Order not found' });
+    }
+    
+    // Update order status
+    order.isPaid = true;
+    order.paidAt = new Date();
+    
+    await order.save();
+
+    // Update stock and sales of products
+    for(const shop of order.shops){
+      for(const item of shop.orderItems){
+        const product = await Product.findById(item.product._id);
+
+        if(product){
+          product.stock -= item.quantity;
+          product.salesNumber += item.quantity;
+          await product.save();
+        }
+      }
+
+      const shopDoc = await Shop.findById(shop.shopId._id);
+      if (shopDoc) {
+        shopDoc.wallet = (shopDoc.wallet || 0) + shop.totalShopPrice; // Cộng thêm tổng giá trị shop
+        await shopDoc.save();
+      }
+    }
+
+    const customer = await User.findOne({ _id: order.customer });
+
+    await Cart.findOneAndUpdate({ user: order.customer }, { cartItems: [] });
+
+
+    // Gửi email xác nhận đơn hàng
+    const email = customer.email; // Giả sử email khách hàng được lưu trong order
+    console.log(email);
+    const subject = "Order Confirmation";
+    const orderDetails = {
+      id: order._id,
+      date: order.createdAt.toISOString().slice(0, 10),
+      total: order.totalOrderPrice,
+      currency: "VND",
+    };
 
     try {
-      // Tìm đơn hàng tương ứng dựa trên session ID
-      const orderId = session.metadata.orderId;
-
-      const order = await Order.findById(orderId);
-      if (!order) {
-        console.error('Order not found:', orderId);
-        return res.status(404).json({ message: 'Order not found' });
-      }
-
-      // Cập nhật trạng thái thanh toán
-      order.isPaid = true;
-      order.paidAt = new Date();
-      await order.save();
-
-      console.log('Payment succeeded for order:', orderId);
-
-      // Cập nhật tồn kho và doanh số
-      for (const shop of order.shops) {
-        for (const item of shop.orderItems) {
-          const product = await Product.findById(item.product._id);
-          if (product) {
-            product.stock -= item.quantity;
-            product.salesNumber += item.quantity;
-            await product.save();
-          }
-        }
-
-        // Cập nhật ví của shop
-        const shopDoc = await Shop.findById(shop.shopId);
-        if (shopDoc) {
-          shopDoc.wallet = (shopDoc.wallet || 0) + shop.totalShopPrice;
-          await shopDoc.save();
-        }
-      }
-
-      // Dọn sạch giỏ hàng của khách hàng
-      await Cart.findOneAndUpdate({ user: order.customer }, { cartItems: [] });
-
-      // Gửi email xác nhận đơn hàng
-      const customer = await User.findById(order.customer);
-      const email = customer.email;
-      const subject = 'Order Confirmation';
-      const orderDetails = {
-        id: order._id,
-        date: order.createdAt.toISOString().slice(0, 10),
-        total: order.totalOrderPrice,
-        currency: 'USD',
-      };
-
-      try {
-        await sendMail(email, subject, orderDetails);
-        console.log('Order confirmation email sent to:', email);
-      } catch (emailError) {
-        console.error('Error sending confirmation email:', emailError.message);
-      }
-
-      res.status(200).send('Webhook received');
-    } catch (error) {
-      console.error('Error processing Stripe webhook:', error.message);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Something went wrong',
-        error: error.message,
-      });
+      await sendMail(email, subject, orderDetails);
+      console.log("Order confirmation email sent to:", email);
+    } catch (emailError) {
+      console.error("Error sending confirmation email:", emailError.message);
     }
+
+    res.redirect(`${process.env.CLIENT_URL}/orderconfirm`);
+
+  } catch (error) {
+    console.error('Stripe return error:', error.message);
+    res.status(500).json({ status: 'error', message: 'Something went wrong', error: error.message });
   }
-
-  // Nếu sự kiện không được hỗ trợ
-  res.status(400).json({ message: 'Unhandled event type' });
-};
-
-// exports.stripeWebhook = async (req, res) => {
-//   let event;
-
-//   try {
-//     const signature = req.headers['stripe-signature'];
-//     event = stripe.webhooks.constructEvent(
-//       req.rawBody,
-//       signature,
-//       process.env.STRIPE_WEBHOOK_SECRET
-//     );
-//   } catch (error) {
-//     console.error('Stripe Webhook Error:', error.message);
-//     return res.status(400).json({ message: `Webhook Error: ${error.message}` });
-//   }
-
-//   if (event.type === 'checkout.session.completed') {
-//     const session = event.data.object;
-
-//     try {
-//       const userId = session.metadata.userId;
-//       const shops = JSON.parse(session.metadata.shops);
-//       const shippingAddress = JSON.parse(session.metadata.shippingAddress);
-//       const paymentMethod = session.metadata.paymentMethod;
-
-//       let totalOrderPrice = 0;
-
-//       // Update stock and sales, calculate total order price
-//       for (const shop of shops) {
-//         for (const item of shop.orderItems) {
-//           const product = await Product.findById(item.product);
-//           if (product) {
-//             product.stock -= item.quantity;
-//             product.salesNumber += item.quantity;
-
-//             if (product.stock < 0) {
-//               console.warn(`Stock for product ${product.title} is below zero!`);
-//             }
-
-//             await product.save();
-//           }
-
-//           totalOrderPrice += item.quantity * item.price;
-//         }
-//       }
-
-//       // Create the order
-//       const order = await Order.create({
-//         customer: userId,
-//         shops,
-//         shippingAddress,
-//         paymentMethod,
-//         totalOrderPrice,
-//         status: 'Pending',
-//       });
-
-//       // Clear the user's cart
-//       await Cart.findOneAndUpdate({ user: userId }, { cartItems: [] });
-
-//       console.log(`Order ${order._id} created successfully.`);
-//     } catch (error) {
-//       console.error(`Error creating order after Stripe payment: ${error.message}`);
-//     }
-//   }
-
-//   res.status(200).json({ received: true });
-// };
+}
 
 
 // @desc    Create VNPAY Checkout Session
-// @route   POST /order/place-order_vn
+// @route   POST /order/place-order-vn
 // @access  Private/Customer
 exports.createVNpay =  async (req, res) => {
 try {
@@ -926,6 +986,7 @@ try {
       vnp_Params['vnp_SecureHash'] = signed;
       vnpUrl += '?' + querystring.stringify(vnp_Params, { encode: false });
 
+      //res.redirect(vnpUrl);
       return res.status(200).json({
         status: 'success',
         message: 'VNPAY payment URL generated',
@@ -942,6 +1003,7 @@ try {
     });
   }
 };
+
 
 // @desc    Return Success/Fail from VNPAY
 // @route   GET /order/vnpay-return
@@ -1021,10 +1083,8 @@ exports.vnpayReturn = async (req, res) => {
         console.error("Error sending confirmation email:", emailError.message);
       }
 
-      return res.status(200).json({
-        code: vnp_Params['vnp_ResponseCode'],
-        message: 'Transaction verified successfully',
-      });
+      res.redirect(`${process.env.CLIENT_URL}/orderconfirm`);
+      
     } else {
       return res.status(400).json({
         code: '97',

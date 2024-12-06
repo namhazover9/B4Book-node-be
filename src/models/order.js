@@ -24,11 +24,6 @@ const orderSchema = new mongoose.Schema(
             images: [{ type: String, required: true }],
           },
         ],
-        shippingMethod: {
-          type: String,
-          enum: ['Standard', 'Express'],
-          required: true,
-        },
         shippingCost: { type: Number, required: true},
         status: {
           type: String,
@@ -42,12 +37,13 @@ const orderSchema = new mongoose.Schema(
       },
     ],
     shippingAddress: {
-      address: { type: String, required: true },
-      city: { type: String, required: true },
+      address: { type: String },
+      city: { type: String},
+      country: { type: String},
     },
     paymentMethod: {
       type: String,
-      enum: ['COD', 'Credit Card', 'VNPAY'],
+      enum: ['COD', 'Credit Card'],
       required: true,
     },
     totalOrderPrice: { type: Number, required: true }, // Tổng giá trị đơn hàng (bao gồm phí vận chuyển)

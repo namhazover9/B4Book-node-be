@@ -11,13 +11,13 @@ router.get("/getAllOrderByCustomer/:id",isAuth, OrderController.getOrderByIdForC
 router.get('/cart-data', isAuth, OrderController.getCartForOrder);
 router.get("/search",isShop, OrderController.searchOrder);
 router.get("/vnpay-return", OrderController.vnpayReturn);
+router.get("/stripe-return",  OrderController.stripeReturn);
+
 router.get("/customer/:id", isAuth, OrderController.getCustomerOrders);
 router.get("/:orderId", isShop, OrderController.getOrderByIdForShop);
 
-// router.post("/summary", isAuth, OrderController.createOrder);
+router.post("/place-order", isAuth, OrderController.placeOrder);
 router.post("/place-order-stp", isAuth, OrderController.placeOrderSTP);
-router.post('/stripe/webhook', isAuth, bodyParser.raw({ type: 'application/json' }), OrderController.stripeWebhook)
-
 router.post('/place-order-vn', isAuth,  OrderController.createVNpay);
 
 
