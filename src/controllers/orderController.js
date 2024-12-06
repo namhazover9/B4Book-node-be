@@ -889,7 +889,7 @@ exports.stripeReturn = async (req, res) => {
 // @access  Private/Customer
 exports.createVNpay =  async (req, res) => {
 try {
-    const { shops, shippingAddress, paymentMethod } = req.body;
+    const { shops, shippingAddress, paymentMethod, totalOrderPrice } = req.body;
     const customerId = req.user._id;
 
     if (!shops || shops.length === 0) {
@@ -899,73 +899,80 @@ try {
       });
     }
 
-    let totalOrderPrice = 0;
+    // Kiểm tra xem totalOrderPrice có hợp lệ không
+    if (!totalOrderPrice || totalOrderPrice <= 0) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Invalid totalOrderPrice',
+      });
+    }
+
     const orderItems = [];
 
     // Duyệt qua từng shop để tạo danh sách đơn hàng
     for (const shop of shops) {
       let shopTotalPrice = 0;
       for (const item of shop.orderItems) {
-        const product = await Product.findById(item.product);
-        if (!product || product.stock < item.quantity) {
+        const products = await Product.findById(item.product);
+        if (!products ) {
           return res.status(400).json({
             status: 'fail',
-            message: `Product out of stock or not available: ${item.product}`,
+            message: "accc",
           });
         }
 
-        const itemTotal = product.price * item.quantity;
-        shopTotalPrice += itemTotal;
+        // const itemTotal = product.price * item.quantity;
+        // shopTotalPrice += itemTotal;
 
         orderItems.push({
-          product: product._id,
-          title: product.title,
-          price: product.price,
+          product: products._id,
+          title: products.title,
+          price: products.price,
           quantity: item.quantity,
-          images: product.images,
+          images: products.images,
         });
       }
 
-      const randomShippingCost = () => Math.floor(Math.random() * (8 - 4 + 1)) + 4;
+      //const randomShippingCost = () => Math.floor(Math.random() * (8 - 4 + 1)) + 4;
       // Cộng phí vận chuyển
-      shop.shippingCost = randomShippingCost();
+      //shop.shippingCost = randomShippingCost();
       shop.status = 'Pending';
-      const shippingCost = shop.shippingCost;
-      console.log(shippingCost);
-      shopTotalPrice += shippingCost;
+      // const shippingCost = shop.shippingCost;
+      // console.log(shippingCost);
+      // shopTotalPrice += shippingCost;
 
-      const voucherDiscount = shop.voucherDiscount || 0;
+      //const voucherDiscount = shop.voucherDiscount || 0;
       
       // Xử lý voucherDiscount (nếu có)
-      if (voucherDiscount) {
-        const voucher = await Voucher.findById(voucherDiscount);
-        if (!voucher) {
-          return res.status(400).json({
-            status: 'fail',
-            message: `Invalid voucher for shop: ${shop.shopId}`,
-          });
-        }
+      // if (voucherDiscount) {
+      //   const voucher = await Voucher.findById(voucherDiscount);
+      //   if (!voucher) {
+      //     return res.status(400).json({
+      //       status: 'fail',
+      //       message: `Invalid voucher for shop: ${shop.shopId}`,
+      //     });
+      //   }
 
-        // Kiểm tra hiệu lực của voucher
-        const now = new Date();
-        if (!voucher.isActive || voucher.expired < now || voucher.validDate > now) {
-          return res.status(400).json({
-            status: 'fail',
-            message: `Voucher is expired or not valid yet: ${voucher.code}`,
-          });
-        }
+      //   // Kiểm tra hiệu lực của voucher
+      //   const now = new Date();
+      //   if (!voucher.isActive || voucher.expired < now || voucher.validDate > now) {
+      //     return res.status(400).json({
+      //       status: 'fail',
+      //       message: `Voucher is expired or not valid yet: ${voucher.code}`,
+      //     });
+      //   }
 
-        // Tính giá trị giảm giá
-        const discountValue = (shopTotalPrice * voucher.value) / 100;
-        shopTotalPrice -= discountValue;
-      }
+      //   // Tính giá trị giảm giá
+      //   const discountValue = (shopTotalPrice * voucher.value) / 100;
+      //   shopTotalPrice -= discountValue;
+      // }
 
       // Đảm bảo tổng giá không âm
-      shopTotalPrice = Math.max(shopTotalPrice, 0);
+      // shopTotalPrice = Math.max(shopTotalPrice, 0);
 
-      shop.totalShopPrice = shopTotalPrice;
+      // shop.totalShopPrice = shopTotalPrice;
       
-      totalOrderPrice += shop.totalShopPrice;
+      // totalOrderPrice += shop.totalShopPrice;
     }  
 
     if (paymentMethod === 'Credit Card') {
@@ -975,9 +982,10 @@ try {
         shops,
         shippingAddress,
         paymentMethod,
-        totalOrderPrice
+        totalOrderPrice,
       });
 
+      console.log(order._id);
       process.env.TZ = 'Asia/Ho_Chi_Minh';
       
       let date = new Date();
@@ -1022,7 +1030,7 @@ try {
       vnp_Params['vnp_SecureHash'] = signed;
       vnpUrl += '?' + querystring.stringify(vnp_Params, { encode: false });
 
-      //res.redirect(vnpUrl);
+      // res.redirect(vnpUrl);
       return res.status(200).json({
         status: 'success',
         message: 'VNPAY payment URL generated',
@@ -1034,7 +1042,7 @@ try {
     console.error('Error creating Stripe session:', error.message);
     res.status(500).json({
       status: 'error',
-      message: 'Something went wrong while creating Stripe session',
+      message: 'Something went wrong while creating VNPay session',
       error: error.message,
     });
   }
