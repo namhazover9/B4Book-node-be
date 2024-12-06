@@ -15,11 +15,11 @@ router.get("/stripe-return",  OrderController.stripeReturn);
 
 router.get("/customer/:id", isAuth, OrderController.getCustomerOrders);
 router.get("/:orderId", isShop, OrderController.getOrderByIdForShop);
+router.get("/getDetailOrder/:orderId", isAuth, OrderController.getOrderByIdForCustomer);
 
 router.post("/place-order", isAuth, OrderController.placeOrder);
 router.post("/place-order-stp", isAuth, OrderController.placeOrderSTP);
 router.post('/place-order-vn', isAuth,  OrderController.createVNpay);
-
 
 
 router.patch("/:orderId/cancel", OrderController.cancelOrder);

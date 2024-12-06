@@ -22,10 +22,8 @@ exports.addProductToCart = async (req, res) => {
       return res.status(404).json({ status: 'error', message: 'Product not found' });
     }
 
-    // Lấy ShoppingCartcho user đã đăng nhập
     let cart = await ShoppingCart.findOne({ user: req.user._id });
     if (!cart) {
-      // Tạo mới giỏ hàng nếu chưa tồn tại
       cart = await ShoppingCart.create({
         user: req.user._id,
         cartItems: [
@@ -68,6 +66,9 @@ exports.addProductToCart = async (req, res) => {
   }
 };
 
+
+
+  
   
   
 // @desc    Get logged user cart
@@ -83,7 +84,12 @@ exports.getLoggedUserCart = async (req, res) => {
     const cart = await ShoppingCart.findOne({ user: userId }).populate({
       path: "cartItems.product",
       model: "Product",
-      select: "title description price images author publisher ISBN language stock category",
+      select: "title description price images author publisher ISBN language stock category shopId",
+      populate: {
+        path: "shopId",
+        model: "Shop", // Tên model của bảng Shop
+        select: "shopEmail shopName shopAddress", // Chỉ lấy các trường cần thiết từ Shop
+      },
     });
     // Xử lý khi giỏ hàng không tồn tại hoặc không có sản phẩm
     if (!cart || cart.cartItems.length === 0) {
