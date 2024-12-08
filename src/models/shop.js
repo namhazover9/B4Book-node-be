@@ -12,6 +12,8 @@ const shopSchema = new mongoose.Schema(
         isDefault: { type: Boolean, default: false }, 
       },
     ],
+    description: { type: String, required: true },
+    documents: [{ type: String, required: true }],
     phoneNumber: { type: String, required: true },
     isActive: { type: Boolean, required: true },
     isApproved:{ type: Boolean, required: true },

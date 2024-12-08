@@ -6,7 +6,6 @@ const userController = require("../controllers/userController");
 const { isAuth, isCustomer } = require("../middlewares/auth");
 const upload = require("../utils/multer");
 
-router.get("/", userController.loadAuth);
 // router.post("/createRole", userController.createRole);
 
 // router.get("/auth/google", passport.authenticate("google", ["email", "profile"]));
@@ -56,7 +55,10 @@ router.get("/", userController.loadAuth);
 
 
 router.get("/Userprofile", isAuth, userController.showProfile);
-router.post("/registerShop",  upload.array("images", 1), isAuth, userController.registerShop);
+router.post("/registerShop",  upload.fields([
+    { name: "images", maxCount: 1 },
+    { name: "documents", maxCount: 1 }, // Cho phép tối đa 5 file tài liệu
+  ]), isAuth, userController.registerShop);
 router.post("/sendVerify", userController.sendVerifyCode);
 router.put("/addPassword",isAuth, userController.addPassword);
 router.post('/addWishlistProduct/:id',isAuth,userController.addWishlistProduct);
