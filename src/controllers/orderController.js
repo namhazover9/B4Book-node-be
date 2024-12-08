@@ -528,10 +528,8 @@ exports.searchOrder = async (req, res) => {
 // @access  Private/Customer
 exports.placeOrder = async (req, res) => {
   try {
-    const { shops, shippingAddress, paymentMethod } = req.body;
+    const { shops, shippingAddress, paymentMethod, totalOrderPrice } = req.body;
     const customerId = req.user._id;
-
-
     if (!shops || shops.length === 0) {
       return res.status(400).json({
         status: 'fail',
@@ -539,12 +537,18 @@ exports.placeOrder = async (req, res) => {
       });
     }
 
-    let totalOrderPrice = 0;
-    const orderItems = [];
 
+    // Kiểm tra xem totalOrderPrice có hợp lệ không
+    if (!totalOrderPrice || totalOrderPrice <= 0) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Invalid totalOrderPrice',
+      });
+    }
+    const orderItems = [];
     // Duyệt qua từng shop để tạo danh sách đơn hàng
     for (const shop of shops) {
-      let shopTotalPrice = 0;
+      //let shopTotalPrice = 0;
       for (const item of shop.orderItems) {
         const product = await Product.findById(item.product);
         if (!product || product.stock < item.quantity) {
@@ -554,8 +558,8 @@ exports.placeOrder = async (req, res) => {
           });
         }
 
-        const itemTotal = product.price * item.quantity;
-        shopTotalPrice += itemTotal;
+        // const itemTotal = product.price * item.quantity;
+        // shopTotalPrice += itemTotal;
 
         orderItems.push({
           product: product._id,
@@ -564,78 +568,37 @@ exports.placeOrder = async (req, res) => {
           quantity: item.quantity,
           images: product.images,
         });
-
         if(product){
           product.stock -= item.quantity;
           product.salesNumber += item.quantity;
           await product.save();
         }
       }
+     
+      shop.status = 'Pending';
+      // shop.totalShopPrice = shopTotalPrice;
+      // totalOrderPrice += shop.totalShopPrice;
 
-      const randomShippingCost = () => Math.floor(Math.random() * (8 - 4 + 1)) + 4;
-      // Cộng phí vận chuyển
-      shop.shippingCost = randomShippingCost();
-      const shippingCost = shop.shippingCost;
-      console.log(shippingCost);
-      shopTotalPrice += shippingCost;
-
-      const voucherDiscount = shop.voucherDiscount || 0;
-      
-      // Xử lý voucherDiscount (nếu có)
-      if (voucherDiscount) {
-        const voucher = await Voucher.findById(voucherDiscount);
-        if (!voucher) {
-          return res.status(400).json({
-            status: 'fail',
-            message: `Invalid voucher for shop: ${shop.shopId}`,
-          });
-        }
-
-        // Kiểm tra hiệu lực của voucher
-        const now = new Date();
-        if (!voucher.isActive || voucher.expired < now || voucher.validDate > now) {
-          return res.status(400).json({
-            status: 'fail',
-            message: `Voucher is expired or not valid yet: ${voucher.code}`,
-          });
-        }
-
-        // Tính giá trị giảm giá
-        const discountValue = (shopTotalPrice * voucher.value) / 100;
-        shopTotalPrice -= discountValue;
-      }
-
-      // Đảm bảo tổng giá không âm
-      shopTotalPrice = Math.max(shopTotalPrice, 0);
-
-      shop.totalShopPrice = shopTotalPrice;
-      
-      totalOrderPrice += shop.totalShopPrice;
-
-      shop.wallet = (shop.wallet || 0) + shop.totalShopPrice; // Cộng thêm tổng giá trị shop
-      await shop.save();
-      
-    }  
-
+      const shopId = shop.shopId;
+      const shopInfo = await Shop.findById(shopId);
+      shopInfo.wallet = (shopInfo.wallet || 0) + shop.totalShopPrice; // Cộng thêm tổng giá trị shop
+      await shopInfo.save();
+    }
     // If payment method is Credit Card, create Stripe Checkout Session
     if (paymentMethod === 'COD') {
-
       const order = await Order.create({
         customer: customerId,
         shops,
         shippingAddress,
         paymentMethod,
         totalOrderPrice,
-        status: 'Pending',
         isPaid: true,
         paidAt: new Date()
       });
-
-
+      console.log('Order created:', order._id);
       const customer = await User.findOne({ _id: order.customer });
-
+      console.log('Customer:', customer._id);
       await Cart.findOneAndUpdate({ user: order.customer }, { cartItems: [] });
-
       // Gửi email xác nhận đơn hàng
       const email = customer.email; // Giả sử email khách hàng được lưu trong order
       console.log(email);
@@ -646,17 +609,18 @@ exports.placeOrder = async (req, res) => {
       total: order.totalOrderPrice,
       currency: "VND",
       };
-
       try {
         await sendMail(email, subject, orderDetails);
         console.log("Order confirmation email sent to:", email);
       } catch (emailError) {
         console.error("Error sending confirmation email:", emailError.message);
       }
-  
-      res.redirect(`${process.env.CLIENT_URL}/orderconfirm`);
+      return res.status(200).json({
+        status: 'success',
+        message: 'Order placed successfully',
+        data: order,
+      });
     }
-
     res.status(400).json({
       status: 'fail',
       message: 'Payment method not supported',
@@ -676,7 +640,7 @@ exports.placeOrder = async (req, res) => {
 // @access  Private/Customer
 exports.placeOrderSTP = async (req, res) => {
   try {
-    const { shops, shippingAddress, paymentMethod } = req.body;
+    const { shops, shippingAddress, paymentMethod, totalOrderPrice} = req.body;
     const customerId = req.user._id;
 
     const returnUrl = "http://localhost:8000";
@@ -688,7 +652,14 @@ exports.placeOrderSTP = async (req, res) => {
       });
     }
 
-    let totalOrderPrice = 0;
+    // Kiểm tra xem totalOrderPrice có hợp lệ không
+    if (!totalOrderPrice || totalOrderPrice <= 0) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Invalid totalOrderPrice',
+      });
+    }
+
     const orderItems = [];
 
     // Duyệt qua từng shop để tạo danh sách đơn hàng
@@ -703,8 +674,8 @@ exports.placeOrderSTP = async (req, res) => {
           });
         }
 
-        const itemTotal = product.price * item.quantity;
-        shopTotalPrice += itemTotal;
+        // const itemTotal = product.price * item.quantity;
+        // shopTotalPrice += itemTotal;
 
         orderItems.push({
           product: product._id,
@@ -715,45 +686,47 @@ exports.placeOrderSTP = async (req, res) => {
         });
       }
 
-      const randomShippingCost = () => Math.floor(Math.random() * (8 - 4 + 1)) + 4;
-      // Cộng phí vận chuyển
-      shop.shippingCost = randomShippingCost();
-      const shippingCost = shop.shippingCost;
-      console.log(shippingCost);
-      shopTotalPrice += shippingCost;
+      shop.status = 'Pending';
 
-      const voucherDiscount = shop.voucherDiscount || 0;
+      //const randomShippingCost = () => Math.floor(Math.random() * (8 - 4 + 1)) + 4;
+      // Cộng phí vận chuyển
+      // shop.shippingCost = randomShippingCost();
+      // const shippingCost = shop.shippingCost;
+      // console.log(shippingCost);
+      // shopTotalPrice += shippingCost;
+
+      //const voucherDiscount = shop.voucherDiscount || 0;
       
       // Xử lý voucherDiscount (nếu có)
-      if (voucherDiscount) {
-        const voucher = await Voucher.findById(voucherDiscount);
-        if (!voucher) {
-          return res.status(400).json({
-            status: 'fail',
-            message: `Invalid voucher for shop: ${shop.shopId}`,
-          });
-        }
+      // if (voucherDiscount) {
+      //   const voucher = await Voucher.findById(voucherDiscount);
+      //   if (!voucher) {
+      //     return res.status(400).json({
+      //       status: 'fail',
+      //       message: `Invalid voucher for shop: ${shop.shopId}`,
+      //     });
+      //   }
 
         // Kiểm tra hiệu lực của voucher
-        const now = new Date();
-        if (!voucher.isActive || voucher.expired < now || voucher.validDate > now) {
-          return res.status(400).json({
-            status: 'fail',
-            message: `Voucher is expired or not valid yet: ${voucher.code}`,
-          });
-        }
+        // const now = new Date();
+        // if (!voucher.isActive || voucher.expired < now || voucher.validDate > now) {
+        //   return res.status(400).json({
+        //     status: 'fail',
+        //     message: `Voucher is expired or not valid yet: ${voucher.code}`,
+        //   });
+        // }
 
         // Tính giá trị giảm giá
-        const discountValue = (shopTotalPrice * voucher.value) / 100;
-        shopTotalPrice -= discountValue;
-      }
+        // const discountValue = (shopTotalPrice * voucher.value) / 100;
+        // shopTotalPrice -= discountValue;
+      //}
 
       // Đảm bảo tổng giá không âm
-      shopTotalPrice = Math.max(shopTotalPrice, 0);
+      // shopTotalPrice = Math.max(shopTotalPrice, 0);
 
-      shop.totalShopPrice = shopTotalPrice;
+      // shop.totalShopPrice = shopTotalPrice;
       
-      totalOrderPrice += shop.totalShopPrice;
+      // totalOrderPrice += shop.totalShopPrice;
     }  
 
     // If payment method is Credit Card, create Stripe Checkout Session
@@ -766,7 +739,6 @@ exports.placeOrderSTP = async (req, res) => {
         shippingAddress,
         paymentMethod,
         totalOrderPrice,
-        status: 'Pending',
       });
 
 
@@ -782,7 +754,7 @@ exports.placeOrderSTP = async (req, res) => {
               name: item.title,
               images: item.images,
             },
-            unit_amount: Math.round(item.price * 100),
+            unit_amount: Math.round(totalOrderPrice * 100),
           },
           quantity: item.quantity,
         })),
