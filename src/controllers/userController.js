@@ -9,7 +9,8 @@ const bcrypt = require("bcryptjs");
 const { sendMail } = require("../middlewares/sendEmailPassword");
 const { generateRandomCode } = require("../middlewares/generateCode");
 const { data } = require("jquery");
-const { log } = require("console");
+const multer = require("multer");
+const upload = multer({ storage: multer.memoryStorage() }); // Sử dụng memoryStorage để lưu trữ tệp vào bộ nhớ (Buffer)
 dotenv.config();
 const loadAuth = (req, res) => {
   res.render(path.join(__dirname, "../views/user.ejs"));
@@ -373,55 +374,50 @@ const deleteAddress = async (req, res) => {
 // function register from normal user become a seller
 const registerShop = async (req, res) => {
   try {
-    const {
-      shopEmail,
-      shopName,
-      address,
-      phoneNumber,
-    } = req.body;
-
+    const { shopEmail, shopName, address, phoneNumber, description } = req.body;
       const reg = /^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)*$/;
-      const images = req.files.map((file) => file.path); 
+      const images = req.files?.images?.map((file) => file.path) || [];
+      const documents = req.files?.documents?.map((file) => file.path) || [];
       const isCheckEmail = reg.test(shopEmail);
-      console.log(shopName, shopEmail, address, phoneNumber);
-      
       if(!isCheckEmail){
           return res.status(400).send({ message: "Email is not valid" });
       }
-      if (!shopName || !address || !phoneNumber ) {
+      if (!shopName || !phoneNumber ) {
           return res.status(400).send({ message: "The input is required" });
       }
-
-      const register = new Shop({
+      let parsedAddress;
+    if (typeof address === 'string') {
+      parsedAddress = JSON.parse(address);
+    } else {
+      parsedAddress = address;
+    }
+    // Kiểm tra xem address có phải là đối tượng hợp lệ không
+    if (!parsedAddress) {
+      return res.status(400).send({ message: "Address must include street, city, and country" });
+    }
+    let shop = await Shop.findOne({ user: req.user._id });
+    if (shop) {
+      return res.status(400).send({ message: "You have already registered as a seller" });
+    }
+    shop = await Shop.create({
           shopName,
           shopEmail,
-          address,
+          address: parsedAddress,
           phoneNumber,
+          description: description,
           images,
+          documents,
           isActive: false,
           isApproved: false,
           wallet: 0,
-          user: req.user._id 
+          user: req.user._id
       });
-      //  else if(!isCheckEmail){
-      //       return res.status(400).send({ message: "Email is not valid" });
-      //   }
-      // const respone = await Shop.create({
-      //     shopName: shopName, 
-      //     shopEmail: isCheckEmail,
-      //     shopAddress:shopAddress, 
-      //     phoneNumber:phoneNumber,
-      //     images: images,
-      //     isActive: false,
-      //     isApproved: false,
-      //     user: req.headers['id']
-      // });
-      await register.save();
-      res.status(201).json(register);
+      res.status(201).json(shop);
   } catch (error) {
     res.status(500).send({ message: error.message });
   }
 };
+
 
 // add product to wishlist
 const addWishlistProduct = async (req, res) => {

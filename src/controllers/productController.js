@@ -102,8 +102,6 @@ exports.getProductByShop = async (req, res) => {
   }
 };
 
-
-
 exports.createProduct = async (req, res) => {
   try {
     const {
@@ -390,7 +388,10 @@ exports.getAllProducts = async (req, res) => {
     const { category, minPrice, maxPrice, author, page = 1, limit = 10, sort } = req.query;
 
     // Tạo đối tượng điều kiện (query) cho việc tìm kiếm
-    const query = {};
+    const query = {
+      isDeleted: false, // Chỉ lấy các sản phẩm không bị xóa
+      isApproved: true, // Chỉ lấy các sản phẩm đã được phê duyệt
+    };
 
     // Lọc theo category nếu có
     if (category) query.category = { $in: category.split(",") }; // Lọc nhiều category, chuyển thành mảng
@@ -431,6 +432,7 @@ exports.getAllProducts = async (req, res) => {
         sortOptions = {}; // Không sắp xếp nếu không có tham số `sort`
         break;
     }
+
     // Truy vấn danh sách sản phẩm theo điều kiện lọc và sắp xếp
     const products = await Product.find(query)
       .sort(sortOptions) // Áp dụng sắp xếp
@@ -439,7 +441,6 @@ exports.getAllProducts = async (req, res) => {
 
     // Đếm tổng số sản phẩm phù hợp với các điều kiện lọc
     const total = await Product.countDocuments(query);
-
     // Trả về kết quả
     res.status(200).json({
       data: products,
@@ -451,6 +452,7 @@ exports.getAllProducts = async (req, res) => {
     res.status(500).json({ message: error.message }); // Xử lý lỗi
   }
 };
+
 
 
 exports.searchProduct = async (req, res) => {

@@ -217,7 +217,11 @@ const getAllShop = async (req, res) => {
     const limitNumber = parseInt(limit, 10);
 
     // Điều kiện tìm kiếm: nếu có `name`, tìm theo `shopName`, nếu không, lấy tất cả
-    const query = name ? { shopName: { $regex: name, $options: 'i' } } : {};
+    const query = {
+      isActive: true,
+      isApproved: true,
+      ...(name && { shopName: { $regex: name, $options: 'i' } }) // Nếu có `name`, tìm theo `shopName`
+    };
 
     // Tìm kiếm với pagination
     const shops = await Shop.find(query)

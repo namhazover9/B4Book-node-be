@@ -9,7 +9,8 @@ router.get("/withdrawReq/:id", isAdmin, adminController.getWithdrawById);
 router.put("/activeorDeactive",isAdmin, adminController.activeOrDeactive);
 router.get("/showAllRegisterForm",isAdmin, adminController.showAllRegisterForm);
 router.get("/search",isAdmin, adminController.searchAccount);
-router.put("/:id", isAdmin, adminController.approvedShop);
+router.put("/approveShop/:id", isAdmin, adminController.approvedShop);
 router.get("/showAllUser",isAdmin, adminController.showAllUser);
-
+router.get("/showAllProductRegister",isAdmin, adminController.getAllProductRegister);
+router.put("/approvedProduct/:id", isAdmin, adminController.approvedProduct);
 module.exports = router;
