@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema(
+const voucherSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     code: { type: String, required: true },
@@ -23,6 +23,6 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-const Voucher = mongoose.model("Voucher", userSchema);
+const Voucher = mongoose.model("Voucher", voucherSchema);
 
 module.exports = Voucher;
