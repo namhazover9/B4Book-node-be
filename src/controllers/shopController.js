@@ -105,8 +105,6 @@ const getAllVoucherForShop = async (req, res) => {
   }
 };
 
-
-
 // active or deactive vouchers
 const activeOrDeactiveVoucher = async (req, res) => {
   try {
