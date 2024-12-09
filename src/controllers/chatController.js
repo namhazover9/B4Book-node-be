@@ -109,5 +109,4 @@ const getAllChatById = async (req, res) => {
 };
 
 
-
 module.exports = { createChat,updateChat, deleteChat,getAllChatById };
