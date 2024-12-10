@@ -221,13 +221,14 @@ exports.feebackProduct = async (req, res) => {
     const { rating, comment } = req.body; 
     const productId = req.params.id; 
     const user = req.user._id ;
+    const orderId = req.params.orderId
     const product = await Product.findByIdAndUpdate(productId, { $inc: { numberOfRating: 1} }, { new: true });
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    product.feedBacks.push({ userId: user, rating: rating, comment: comment });
+    product.feedBacks.push({ userId: user, rating: rating, comment: comment, orderId: orderId });
     await product.save();
     res.status(200).json({
       message: "Ratting updated successfully",

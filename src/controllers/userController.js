@@ -563,8 +563,7 @@ const switchShop = async (req, res) => {
       return res.status(404).json({ message: "Shop not found" });
     }
     if(shop.isActive === false || shop.isApproved === false){
-      console.log(shop.isActive === false)
-      return res.status(400).json({ message: "Shop not active" });
+      return res.status(400).json({ message: "You dont have permission" });
     }
     res.status(200).json({ message: "success", data: shop }); // Đảm bảo cấu trúc trả về là chính xác
   } catch (error) {

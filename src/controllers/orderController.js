@@ -213,7 +213,7 @@ exports.getOrderByIdForCustomer = async (req, res) => {
       })
       .populate({
         path: 'shops.orderItems.product', // Populate thông tin sản phẩm trong orderItems
-        select: 'title description price images', // Chỉ lấy các trường cần thiết
+        select: 'title description price images feedBacks', // Chỉ lấy các trường cần thiết
       });
 
     // Nếu không tìm thấy order
@@ -244,9 +244,9 @@ exports.getOrderByIdForCustomer = async (req, res) => {
         images: item.product?.images, // Hình ảnh sản phẩm
         quantity: item.quantity, // Số lượng
         price: item.price, // Giá tiền
+        feedBacks: item.product?.feedBacks,
       })),
     }));
-
     // Trả về response
     res.status(200).json({
       status: 'success',
