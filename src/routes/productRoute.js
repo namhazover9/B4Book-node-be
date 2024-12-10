@@ -5,6 +5,7 @@ const { isShop, isAuth } = require("../middlewares/auth");
 const upload = require("../utils/multer");
 
 router.post("/upload",  upload.array("images", 10), isShop, productController.uploadImages);
+router.get("/getProductInLandingPage", productController.getProductInLandingPage);
 router.get("/search", productController.searchProduct);
 router.get("/", productController.getAllProducts);
 router.get("/exportFile", isShop, productController.exportFileProduct);
@@ -18,6 +19,7 @@ router.put("/updateFeedbacks/:id", isAuth, productController.updateFeedbacks);
 router.get("/showAllFeedbacks/:id", productController.showAllFeedbacks);
 router.get("/:id", productController.getProductById);
 router.get("/getProductByShop/:id", productController.getProductByShop);
+
 router.delete("/deleteFeedback/:id/:feedbackId", productController.deleteFeedback);
 
 module.exports = router;

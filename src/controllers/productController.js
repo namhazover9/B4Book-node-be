@@ -273,7 +273,6 @@ exports.showRating = async (req, res) => {
     // calculate average ratingResult
     const totalRating = validFeedbacks.reduce((acc, cur) => acc + cur.rating, 0);
     product.ratingResult = totalRating / validFeedbacks.length;
-
     res.status(200).json({
       message: "Rating calculated successfully",
       total: product.ratingResult,
@@ -326,8 +325,8 @@ exports.updateFeedbacks = async (req, res) => {
 exports.showAllFeedbacks = async (req, res) => {
   try {
     const productId = req.params.id;
-    const product = await Product.findById(productId);
-
+    const product = await Product.findById(productId).populate('feedBacks.userId', 'userName'); // Populate userName từ model User
+    console.log(product)
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
@@ -339,18 +338,26 @@ exports.showAllFeedbacks = async (req, res) => {
       });
     }
 
+    // Đảm bảo mỗi feedback có userName đi kèm
+    const feedbacksWithUserNames = product.feedBacks.map(feedback => {
+      return {
+        ...feedback.toObject(),
+        userName: feedback.userId ? feedback.userId.userName : null // Nếu không có userId, để trống userName
+      };
+    });
+
     res.status(200).json({
       message: "Feedbacks retrieved successfully",
-      feedbacks: product.feedBacks,
-    })
-    }
-    catch (error) {
-      res.status(500).json({
-        message: "Error retrieving feedbacks",
-        error: error.message,
-      });
-    }
+      feedbacks: feedbacksWithUserNames,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error retrieving feedbacks",
+      error: error.message,
+    });
+  }
 }
+
 
 exports.deleteFeedback = async (req, res) => {
   try {
@@ -531,5 +538,35 @@ exports.exportFileProduct = async (req, res) => {
   }
 };
 
+exports.getProductInLandingPage = async (req, res) => {
+  try {
+    // Lấy favouriteProducts - sắp xếp theo rating từ cao đến thấp
+    const favouriteProducts = await Product.find({ 
+      isApproved: true, 
+      isDeleted: false, 
+      feedBacks: { $elemMatch: { rating: { $gte: 4 } } }
+    }).sort({ ratingResult: -1 }); // Sắp xếp theo ratingResult từ cao đến thấp
+    
+    // Lấy trendingProducts - sắp xếp theo countClick từ cao đến thấp
+    const trendingProducts = await Product.find({
+      isApproved: true, 
+      isDeleted: false, 
+      countClick: { $gte: 100 }
+    }).sort({ countClick: -1 }); // Sắp xếp theo countClick từ cao đến thấp
 
+    // Lấy bestSellingProducts - sắp xếp theo salesNumber từ cao đến thấp
+    const bestSellingProducts = await Product.find({
+      isApproved: true, 
+      isDeleted: false, 
+      salesNumber: { $gte: 0 }
+    }).sort({ salesNumber: -1 }); // Sắp xếp theo salesNumber từ cao đến thấp
+    res.status(200).json({
+      favouriteProducts,
+      trendingProducts,
+      bestSellingProducts
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
 
