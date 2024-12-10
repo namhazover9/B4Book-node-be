@@ -28,21 +28,21 @@ const sendMail = async (email, subject, newPass) => {
               height: 100vh;
           }
           .container{
-              background-color: #fff;
+              background-color: #eee5da;
               padding: 20px;
               border-radius: 8px;
               box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
               text-align: center;
           }
            h1{
-              color: red;
+              color: #679089;
            }
            p{
               margin-bottom: 20px;
            }
            .otp{
               font-size: 36px;
-              color: #7b68ee;
+              color: #f18966;
               margin-bottom: 30px;
            }
       </style>
@@ -51,7 +51,7 @@ const sendMail = async (email, subject, newPass) => {
      <div class="container">
       <h1>New Password</h1>
       <p>Hello ${email} your verify code for reset password is:</p>
-      <p class="Password">${newPass}</p>
+      <p class="Password" style="color: #f18966; font-weigth: bold;">${newPass}</p>
      </div>
     </body>
   </html>

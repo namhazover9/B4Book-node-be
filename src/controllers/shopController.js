@@ -474,12 +474,57 @@ const getWithdrawsByShopId = async (req, res) => {
 
     // Lấy tất cả yêu cầu rút tiền của Shop
     const withdrawRequests = await WithdrawRequest.find({ shop: shop._id })
-      .populate("shop", "shopName shopEmail") // Thêm thông tin Shop
+      .populate("shop", "shopName shopEmail phoneNumber") // Thêm thông tin Shop
       .sort({ createdAt: -1 });
 
     res.status(200).json({ withdrawRequests });
   } catch (error) {
     res.status(500).json({ message: "Internal server error", error });
+  }
+};
+
+const searchWithdrawal = async (req, res) => {
+  try {
+    const keyword = req.query.keyword;
+    console.log("Search keyword:", keyword);
+
+    // Tìm order và lọc các user phù hợp bằng match
+    const withdrawals = await WithdrawRequest.find().populate({
+      path: "shop",
+      select: "shopName shopEmail phoneNumber",
+      match: {
+        $or: [
+          { shopName: { $regex: keyword, $options: "i" } },
+          { shopEmail: { $regex: keyword, $options: "i" } },
+          { phoneNumber: { $regex: keyword, $options: "i" } },
+        ],
+      },
+    });
+
+    // Lọc ra các orders có customer phù hợp
+    const filteredWithdrawals = withdrawals.filter(withdrawal => withdrawal.shop);
+
+    console.log("Filtered withdrawals:", filteredWithdrawals);
+
+    if (filteredWithdrawals.length === 0) {
+      return res.status(404).json({ message: "No withdrawals found." });
+    }
+
+    // Định dạng lại dữ liệu để trả về giống với getAllOrderByShop
+    const formattedWithdrawal = filteredWithdrawals.map((withdrawal, index) => ({
+      key: index + 1,
+      id: withdrawal._id,
+      name: withdrawal.shop?.shopName || 'Unknown',
+      email: withdrawal.shop?.shopEmail || 'N/A',
+      phoneNumber: withdrawal.shop?.phoneNumber || 'N/A',
+      status: withdrawal.status || 'Unknown',
+      amount: `$${withdrawal.amount || 0}`,
+    }));
+
+    res.status(200).json({ success: true, withdrawals: formattedWithdrawal });
+  } catch (error) {
+    console.error("Error searching withdrawals:", error);
+    res.status(500).json({ success: false, message: "Server Error", error });
   }
 };
 
@@ -502,6 +547,7 @@ const getAllTotalRevenueForMonth = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 const getMonthlyRevenue = async (req, res) => {
   try {
     const shops = await Shop.find({});
@@ -542,6 +588,7 @@ module.exports = {
   switchCustomer,
   createWithdrawRequest,
   getWithdrawsByShopId,
+  searchWithdrawal,
   getAllVoucherForShop,
   searchVoucherForShop,
   getTotalShop,
