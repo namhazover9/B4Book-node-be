@@ -16,7 +16,9 @@ const postLogin = async (req, res, next) => {
     if (!account) {
       return res.status(406).json({ message: 'Tài khoản không tồn tại !' });
     }
-        
+    if (account.isActive === false) {
+      return res.status(401).json({ message: 'Your account is not active' });
+    }
     /*
       Kiểm tra số lần đăng nhập
      tránh trường hợp user reload trang để
@@ -105,7 +107,10 @@ const postLoginWithGoogle = async (req, res, next) => {
   try {
     // user from middleware passport
     const { user } = req;
-
+    const userIsValid = await User.findById(user._id);
+    if (userIsValid.isActive === false) {
+      return res.status(401).json({ message: 'Your account is not active' });
+    }
     // tạo refresh token
     const refreshToken = await jwtConfig.encodedToken(
       process.env.REFRESH_TOKEN,
@@ -141,7 +146,10 @@ const postLoginWithFacebook = async (req, res, next) => {
   try {
     // user from middleware passport
     const { user } = req;
-    
+    const userIsValid = await User.findById(user._id);
+    if (userIsValid.isActive === false) {
+      return res.status(401).json({ message: 'Your account is not active' });
+    }
     // tạo refresh token
     const refreshToken = await jwtConfig.encodedToken(
       process.env.REFRESH_TOKEN,
