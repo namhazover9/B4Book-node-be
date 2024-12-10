@@ -217,7 +217,7 @@ aws4@^1.8.0:
 "b4book-node-be@file:.":
   version "1.0.0"
   dependencies:
-    b4book-node-be "file:../../../Library/Caches/Yarn/v6/npm-b4book-node-be-1.0.0-16980ad7-af91-472e-abfa-16f5b21c8958-1733197553840/node_modules/b4book-node-be"
+    b4book-node-be "file:../../Library/Caches/Yarn/v6/npm-b4book-node-be-1.0.0-0cfa27b1-3377-4f15-8a1e-dd6626093a5d-1733751515160/node_modules/b4book-node-be"
     bcrypt "^5.1.1"
     bcryptjs "^2.4.3"
     body-parser "^1.20.3"

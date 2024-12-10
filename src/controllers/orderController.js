@@ -1145,6 +1145,24 @@ exports.vnpayReturn = async (req, res) => {
   }
 };
 
+exports.getTotalOrdersInTransit = async (req, res) => {
+  try {
+    const orders = await Order.find({ status: { $in: ['Pending', 'Confirmed', 'Shipped', 'Delivered'] } });
+    res.status(200).json({
+      status: 'success',
+      message: 'Orders in transit retrieved successfully',
+      numOfOrders: orders.length,
+    });
+  } catch (error) {
+    console.error('Error retrieving orders in transit:', error.message);
+    res.status(500).json({
+      status: 'error',
+      message: 'Something went wrong while retrieving orders in transit',
+      error: error.message,
+    });
+  }
+}
+
 function sortObject(obj) {
   let sorted = {};
   let str = [];
