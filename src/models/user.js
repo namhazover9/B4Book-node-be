@@ -6,10 +6,10 @@ const userSchema = new mongoose.Schema(
     userName: { type: String, required: true },
     address: [
       { 
-        street: { type: String, required: true },
-        city: { type: String, required: true },
-        country: { type: String, required: true },
-        isDefault: { type: Boolean, default: false }, 
+        street: { type: String },
+        city: { type: String },
+        country: { type: String },
+        isDefault: { type: Boolean }, 
       },
     ],
     phoneNumber: { type: String },
