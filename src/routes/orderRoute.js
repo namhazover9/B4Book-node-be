@@ -12,6 +12,7 @@ router.get('/cart-data', isAuth, OrderController.getCartForOrder);
 router.get("/search",isShop, OrderController.searchOrder);
 router.get("/vnpay-return", OrderController.vnpayReturn);
 router.get("/stripe-return",  OrderController.stripeReturn);
+router.get("/totalOrdersInTransit", OrderController.getTotalOrdersInTransit);
 
 router.get("/customer/:id", isAuth, OrderController.getCustomerOrders);
 router.get("/:orderId", isShop, OrderController.getOrderByIdForShop);

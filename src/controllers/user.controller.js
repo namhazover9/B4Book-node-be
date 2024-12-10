@@ -40,8 +40,18 @@ const putUpdateUser = async (req, res, next) => {
   }
 };
 
+const getTotalUser = async (req, res, next) => {
+  try {
+    const totalUser = await UserModel.countDocuments();
+    res.status(200).json({ totalUser });
+  } catch (error) {
+    res.status(400).json({ message: 'Không thể lấy thông tin user', error });
+  }
+};
+
 //export
 module.exports = {
   getUser,
   putUpdateUser,
+  getTotalUser,
 };
