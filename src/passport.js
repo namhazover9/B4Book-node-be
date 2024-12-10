@@ -128,32 +128,24 @@ passport.use(
 const jwtAuthentication = async (req, res, next) => {
   try {
     res.locals.isAuth = false;
-    let token = req.cookies?.access_token || req.query?.token;
+    const token = req.headers.token.split(" ")[1];
     if (!token) {
-      return next();
+      return res.status(401).json({
+        message: "Login first",
+        status: "ERROR",
+      });
     }
-
-    // Verify token
-    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN);
-    if (!decoded) {
-      return res.status(401).json({ message: "Unauthorized." });
+    const decode = jwt.verify(token, process.env.ACCESS_TOKEN);
+    req.user = await User.findById(decode.sub.accountId);
+    if (!req.user) {
+      return res.status(404).json({
+        message: "Login first",
+        status: "ERROR",
+      });
     }
-
-    const accountId = decoded.sub.accountId;
-
-    const user = await User.findById(accountId);
-    if (!user || !user.isActive) {
-      return res.status(401).json({ message: "Unauthorized." });
-    }
-
-    // Lưu người dùng vào req
     res.locals.isAuth = true;
-    req.user = user;
     next();
-  } catch (error) {
-    console.error("JWT Authentication Error:", error);
-    return res.status(401).json({ message: "Unauthorized." });
-  }
+  } catch (error) {}
 };
 
 module.exports = { jwtAuthentication };
