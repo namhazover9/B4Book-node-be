@@ -19,6 +19,12 @@ const shopSchema = new mongoose.Schema(
     isApproved:{ type: Boolean, required: true },
     images: [{ type: String}],
     wallet: { type: Number, default: 0},
+    revenue: [
+      {
+        month: { type: String, required: true },
+        amount: { type: Number, default: 0 },
+      },
+    ],
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   {
