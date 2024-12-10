@@ -3,6 +3,7 @@ const UserModel = require("../models/user");
 // api: get user
 const getUser = async (req, res, next) => {
   try {
+    console.log(res)
     //if check authentication wrong then return error
     if (!res.locals.isAuth)
       return res
