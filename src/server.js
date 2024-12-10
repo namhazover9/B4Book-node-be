@@ -20,7 +20,7 @@ const shopRoute = require("./routes/shopRoute");
 const loginApi = require("./routes/loginRoute");
 const userApi = require('./routes/user.api');
 const accountApi = require('./routes/account.api');
-
+const chatRoute = require('./routes/chatRoute');
 const app = express();
 const port = process.env.PORT || 8000;
 
@@ -58,7 +58,7 @@ app.use("/shop", shopRoute);
 app.use('/login', loginApi);
 app.use('/user', userApi);
 app.use('/account', accountApi);
-
+app.use("/chat",chatRoute);
 // Start server
 app.listen(port, () => {
   console.log(`Server is working on port: ${port}`);

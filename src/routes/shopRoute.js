@@ -20,6 +20,9 @@ router.put("/updateVoucher/:id",isShop,upload.array("image", 1), shop.updateVouc
 router.put("/updateShopInfo", upload.array("images", 1), isShop, shop.updateShopInfo);
 router.get("/", shop.getAllShop);
 router.get("/getAllVoucherForShop/:id", shop.getAllVoucherForShop);
+router.get("/totalShop", shop.getTotalShop);
+router.get("/totalRevenue", shop.getAllTotalRevenueForMonth);
+router.get("/monthlyRevenue", shop.getMonthlyRevenue);
 router.get("/:id", shop.getValueVoucher);
 
 module.exports = router;
