@@ -12,9 +12,7 @@ const { data } = require("jquery");
 const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage() }); // Sử dụng memoryStorage để lưu trữ tệp vào bộ nhớ (Buffer)
 dotenv.config();
-const loadAuth = (req, res) => {
-  res.render(path.join(__dirname, "../views/user.ejs"));
-};
+
 
 // const GoogleLogin = async (req, res) => {
 //   if (!req.user || !req.user.email || !req.user.name) {
@@ -591,7 +589,6 @@ const switchShop = async (req, res) => {
 // };
 
 module.exports = {
-  loadAuth,
   showProfile,
   registerShop,
   addPassword,
