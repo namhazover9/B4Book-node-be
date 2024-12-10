@@ -29,7 +29,7 @@ const sendMail = async (email, subject, orderDetails) => {
                     background-color: #f4f4f9;
                 }
                 .container {
-                    background-color: #fff;
+                    background-color: #eee5da;
                     padding: 20px;
                     border-radius: 8px;
                     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -38,8 +38,11 @@ const sendMail = async (email, subject, orderDetails) => {
                     margin: 20px;
                 }
                 h1 {
-                    color: #4CAF50;
+                    color: #679089;
                     margin-bottom: 10px;
+                }
+                h3 {
+                   color: #f18966;
                 }
                 p {
                     margin: 10px 0;
@@ -72,8 +75,8 @@ const sendMail = async (email, subject, orderDetails) => {
                 <p><strong>Total:</strong> ${orderDetails.total} ${orderDetails.currency}</p>
                 </div>
                 <p>We hope you enjoy your purchase. If you have any questions, feel free to contact us.</p>
-                <p>Best regards,</p>
-                <p>Your Company Team</p>
+                <p style="font-style: italic;">Best regards,</p>
+                <h3>BigFour Co.,LTD</h3>
             </div>
             </body>
         </html>

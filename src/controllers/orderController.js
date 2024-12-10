@@ -1040,15 +1040,14 @@ exports.vnpayReturn = async (req, res) => {
     let signData = querystring.stringify(vnp_Params, { encode: false });
     let crypto = require("crypto");     
     let hmac = crypto.createHmac("sha512", secretKey);
-    let signed = hmac.update(new Buffer(signData, 'utf-8')).digest("hex");
+    let signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
     let orderId = vnp_Params['vnp_TxnRef'];
    
-    if(secureHash === signed){
-      
+    if (secureHash === signed) {
       let order = await Order.findOne({ _id: orderId }).populate('shops.orderItems.product');
 
       if (!order) {
-        return res.status(404).json({code: '01', message: 'Order not found' });
+        return res.status(404).json({ code: '01', message: 'Order not found' });
       }
       
       // Update order status
@@ -1057,33 +1056,66 @@ exports.vnpayReturn = async (req, res) => {
       
       await order.save();
 
-      // Update stock and sales of products
-      for(const shop of order.shops){
-        for(const item of shop.orderItems){
-          const product = await Product.findById(item.product._id);
+      // Update stock, sales, and revenue
+      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+      const shopUpdates = [];
+      const productUpdates = new Map();
 
-          if(product){
-            product.stock -= item.quantity;
-            product.salesNumber += item.quantity;
-            await product.save();
+      for (const shop of order.shops) {
+        for (const item of shop.orderItems) {
+          // Collect product updates
+          if (!productUpdates.has(item.product._id.toString())) {
+            productUpdates.set(item.product._id.toString(), { stock: 0, salesNumber: 0 });
           }
+          const productUpdate = productUpdates.get(item.product._id.toString());
+          productUpdate.stock -= item.quantity;
+          productUpdate.salesNumber += item.quantity;
         }
 
-        const shopDoc = await Shop.findById(shop.shopId._id);
-        if (shopDoc) {
-          shopDoc.wallet = (shopDoc.wallet || 0) + shop.totalShopPrice; // Cộng thêm tổng giá trị shop
-          await shopDoc.save();
-        }
+        // Collect shop updates
+        shopUpdates.push({
+          shopId: shop.shopId._id,
+          totalShopPrice: shop.totalShopPrice,
+        });
       }
 
+      // Update products in bulk
+      const productIds = Array.from(productUpdates.keys());
+      const products = await Product.find({ _id: { $in: productIds } });
+
+      products.forEach((product) => {
+        const update = productUpdates.get(product._id.toString());
+        product.stock += update.stock;
+        product.salesNumber += update.salesNumber;
+      });
+
+      await Promise.all(products.map((product) => product.save()));
+
+      // Update shops in bulk
+      const shopIds = shopUpdates.map((shop) => shop.shopId);
+      const shops = await Shop.find({ _id: { $in: shopIds } });
+
+      shops.forEach((shop) => {
+        const update = shopUpdates.find((upd) => upd.shopId.toString() === shop._id.toString());
+        shop.wallet = (shop.wallet || 0) + update.totalShopPrice;
+
+        // Update or add revenue for the current month
+        const currentRevenue = shop.revenue.find((rev) => rev.month === currentMonth);
+        if (currentRevenue) {
+          currentRevenue.amount += update.totalShopPrice;
+        } else {
+          shop.revenue.push({ month: currentMonth, amount: update.totalShopPrice });
+        }
+      });
+
+      await Promise.all(shops.map((shop) => shop.save()));
+
+      // Clear the cart and send confirmation email
       const customer = await User.findOne({ _id: order.customer });
 
       await Cart.findOneAndUpdate({ user: order.customer }, { cartItems: [] });
 
-
-      // Gửi email xác nhận đơn hàng
-      const email = customer.email; // Giả sử email khách hàng được lưu trong order
-      console.log(email);
+      const email = customer.email;
       const subject = "Order Confirmation";
       const orderDetails = {
         id: order._id,
@@ -1100,12 +1132,11 @@ exports.vnpayReturn = async (req, res) => {
       }
 
       res.redirect(`${process.env.CLIENT_URL}/orderconfirm`);
-      
     } else {
       return res.status(400).json({
         code: '97',
         message: 'Checksum verification failed',
-    });
+      });
     }
     
   } catch (error) {

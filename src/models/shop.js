@@ -12,7 +12,7 @@ const shopSchema = new mongoose.Schema(
         isDefault: { type: Boolean, default: false }, 
       },
     ],
-    description: { type: String, required: true },
+    description: { type: String},
     documents: [{ type: String, required: true }],
     phoneNumber: { type: String, required: true },
     isActive: { type: Boolean, required: true },
@@ -20,6 +20,12 @@ const shopSchema = new mongoose.Schema(
     images: [{ type: String}],
     wallet: { type: Number, default: 0},
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    revenue: [
+      {
+        month: { type: String},
+        amount: { type: Number, default: 0 },
+      },
+    ],
   },
   {
     timestamps: true,
