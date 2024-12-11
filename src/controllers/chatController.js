@@ -116,7 +116,7 @@ const getAllChatById = async (req, res) => {
         }
 
         // Lấy danh sách chat liên quan
-        const chats = await Chat.find({ users: id });
+        const chats = await Chat.find({ users: id }).sort({ updatedAt: -1 });
 
         if (!chats || chats.length === 0) {
             return res.status(404).json({ message: "Chats not found" });

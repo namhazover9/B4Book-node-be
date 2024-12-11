@@ -72,7 +72,7 @@ const getValueVoucher = async (req, res) => {
 // get all voucher function
 const getAllVoucher = async (req, res) => {
   try {
-    const vouchers = await Voucher.find({isActive: true},{isDeleted: false});
+    const vouchers = await Voucher.find({isActive: true},{isDeleted: false}).sort({ createdAt: -1 });
     res.status(200).json(vouchers);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -97,7 +97,7 @@ const getAllVoucherForShop = async (req, res) => {
     const filterCondition = filterConditions[sort] || filterConditions['All Vouchers'];
 
     // Tìm voucher dựa trên điều kiện lọc
-    const vouchers = await Voucher.find(filterCondition);
+    const vouchers = await Voucher.find(filterCondition).sort({ createdAt: -1 });
 
     res.status(200).json(vouchers); // Trả về danh sách vouchers
   } catch (error) {
