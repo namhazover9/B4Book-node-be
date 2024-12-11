@@ -641,7 +641,7 @@ exports.placeOrderSTP = async (req, res) => {
     const { shops, shippingAddress, paymentMethod, totalOrderPrice} = req.body;
     const customerId = req.user._id;
 
-    const returnUrl = "b4book-api-lxwn.onrender.com";
+    const returnUrl = "https://b4book-api-lxwn.onrender.com";
 
     if (!shops || shops.length === 0) {
       return res.status(400).json({
@@ -967,7 +967,7 @@ try {
       let tmnCode = "AL7AF468";
       let secretKey = "8E2BMWQA53PTVWZV7QR1KK1RO01KPK2F";
       let vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
-      let returnUrl = "b4book-api-lxwn.onrender.com/order/vnpay-return";
+      let returnUrl = "https://b4book-api-lxwn.onrender.com/order/vnpay-return";
       let orderInfo = moment(date).format('DDHHmmss');
       let bankCode = 'VNBANK';
       let orderId = order._id;
