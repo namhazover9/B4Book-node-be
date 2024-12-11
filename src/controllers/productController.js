@@ -1,4 +1,5 @@
 const Product = require("../models/product");
+const Shop = require("../models/shop");
 // const Category = require("../models/category");
 const cloudinary = require("../utils/cloudinary");
 const ExcelJS = require('exceljs');
@@ -118,7 +119,6 @@ exports.createProduct = async (req, res) => {
 
     const images = req.files.map((file) => file.path); // Lấy URL từ Cloudinary
     const shopId = req.user._id
-    console.log(shopId)
     const product = new Product({
       title,
       category,
@@ -565,6 +565,17 @@ exports.getProductInLandingPage = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+}
+
+exports.getAmountProductByShop = async(req,res)=>{
+  try {
+    const products = await Product.find({shopId: req.params.id, isDeleted: false});
+    res.status(200).json({
+      amountProduct: products.length
+    })
+  } catch (error) {
+    
   }
 }
 

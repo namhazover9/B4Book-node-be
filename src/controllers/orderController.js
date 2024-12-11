@@ -481,7 +481,6 @@ exports.cancelOrder= async (req, res) => {
 exports.searchOrder = async (req, res) => {
   try {
     const keyword = req.query.keyword;
-    console.log("Search keyword:", keyword);
 
     // Tìm order và lọc các user phù hợp bằng match
     const orders = await Order.find().populate({
@@ -499,7 +498,6 @@ exports.searchOrder = async (req, res) => {
     // Lọc ra các orders có customer phù hợp
     const filteredOrders = orders.filter(order => order.customer);
 
-    console.log("Filtered orders:", filteredOrders);
 
     if (filteredOrders.length === 0) {
       return res.status(404).json({ message: "No orders found." });
@@ -1147,7 +1145,7 @@ exports.vnpayReturn = async (req, res) => {
 
 exports.getTotalOrdersInTransit = async (req, res) => {
   try {
-    const orders = await Order.find({ status: { $in: ['Pending', 'Confirmed', 'Shipped', 'Delivered'] } });
+    const orders = await Order.find({ "shops.status": { $in: ['Pending', 'Confirmed', 'Shipped'] } });
     res.status(200).json({
       status: 'success',
       message: 'Orders in transit retrieved successfully',
@@ -1162,6 +1160,68 @@ exports.getTotalOrdersInTransit = async (req, res) => {
     });
   }
 }
+
+exports.getTotalBuyers = async (req, res) => {
+  try {
+    const shopId = req.params.id; // Lấy shopId từ req.params
+
+    // Lấy danh sách các order có chứa shopId
+    const orders = await Order.find({
+      'shops.shopId': shopId,
+    });
+
+    // Lấy danh sách customer (không trùng lặp) từ các order đó
+    const customerIds = new Set();
+    orders.forEach(order => {
+      customerIds.add(order.customer.toString());
+    });
+
+    const totalBuyers = customerIds.size; // Đếm số lượng khách hàng duy nhất
+    // Trả về kết quả
+    return res.status(200).json({
+      success: true,
+      totalBuyers,
+    });
+  } catch (error) {
+    console.error('Error fetching total buyers:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal Server Error',
+      error: error.message,
+    });
+  }
+};
+
+exports.getTotalOrdersInShop = async (req, res) => {
+  try {
+    // Find the shop associated with the current user
+    const shop = await Shop.findById(req.params.id);
+    if (!shop) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Shop not found',
+      });
+    }
+
+    // Find orders that include this shop and have specific statuses
+    const orders = await Order.find({
+      'shops.shopId': shop._id,
+      'shops.status': { $in: ['Pending', 'Confirmed', 'Shipped'] },
+    });
+    res.status(200).json({
+      status: 'success',
+      message: 'Orders in transit retrieved successfully',
+      numOfOrders: orders.length,
+    });
+  } catch (error) {
+    console.error('Error retrieving orders in transit:', error.message);
+    res.status(500).json({
+      status: 'error',
+      message: 'Something went wrong while retrieving orders in transit',
+      error: error.message,
+    });
+  }
+};
 
 function sortObject(obj) {
   let sorted = {};

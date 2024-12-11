@@ -215,7 +215,6 @@ const resetPassword = async (req, res) => {
       { passWord: hash },
       { new: true }
     );
-    console.log(user);
     if (!user) {
       return res.status(404).send({ message: "User not found" });
     }
@@ -546,7 +545,7 @@ const showDetailShop = async (req, res) => {
     // Tìm 5 sản phẩm bán chạy nhất thuộc về shop này
     const products = await Product.find({ shopId: shop._id })
       .sort({ salesNumber: -1 }) // Sắp xếp giảm dần theo salesNumber
-      .limit(10); // Giới hạn 10 sản phẩm
+      .limit(5); // Giới hạn 10 sản phẩm
     // Trả về thông tin shop và danh sách sản phẩm best seller
     res.json({ shop, bestSellers: products });
   } catch (error) {

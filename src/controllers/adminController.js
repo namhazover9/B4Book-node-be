@@ -164,7 +164,6 @@ const showAllUser = async (req, res) => {
 const activeOrDeactive = async (req, res) => {
   try {
     const { id, status } = req.query;
-    console.log(id, status);
     // Cập nhật trạng thái của user
     const customer = await User.findByIdAndUpdate(
       id,

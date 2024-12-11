@@ -25,5 +25,6 @@ router.get("/totalShop", shop.getTotalShop);
 router.get("/totalRevenue", shop.getAllTotalRevenueForMonth);
 router.get("/monthlyRevenue", shop.getMonthlyRevenue);
 router.get("/:id", shop.getValueVoucher);
-
+router.get("/monthlyRevenue/:id",isShop,shop.getAllTotalRevenueForMonthByShop);
+router.get("/totalRevenueForShop/:id",isShop,shop.getMonthlyRevenueForShop);
 module.exports = router;
