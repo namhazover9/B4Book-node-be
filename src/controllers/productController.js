@@ -83,7 +83,9 @@ exports.getProductByShop = async (req, res) => {
     const limitNumber = parseInt(limit, 10);
 
     // Tìm sản phẩm với shopId
-    const products = await Product.find({ shopId, isDeleted: false })
+    const products = await Product.find({ shopId, isDeleted: false }).sort({
+      createdAt: -1,
+    })
       .skip((pageNumber - 1) * limitNumber) // Bỏ qua (page-1) * limit sản phẩm
       .limit(limitNumber); // Lấy số lượng sản phẩm tương ứng với limit
     // Đếm tổng số sản phẩm để trả về thông tin tổng số trang
@@ -326,8 +328,7 @@ exports.updateFeedbacks = async (req, res) => {
 exports.showAllFeedbacks = async (req, res) => {
   try {
     const productId = req.params.id;
-    const product = await Product.findById(productId).populate('feedBacks.userId', 'userName'); // Populate userName từ model User
-    console.log(product)
+    const product = await Product.findById(productId).sort({ createdAt: -1 }).populate('feedBacks.userId', 'userName'); // Populate userName từ model User
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
@@ -394,7 +395,6 @@ exports.getAllProducts = async (req, res) => {
   try {
     // Lấy các tham số từ query string
     const { category, minPrice, maxPrice, author, page = 1, limit = 10, sort } = req.query;
-
     // Tạo đối tượng điều kiện (query) cho việc tìm kiếm
     const query = {
       isDeleted: false, // Chỉ lấy các sản phẩm không bị xóa
@@ -446,7 +446,6 @@ exports.getAllProducts = async (req, res) => {
       .sort(sortOptions) // Áp dụng sắp xếp
       .skip((pageNumber - 1) * limitNumber) // Bỏ qua các sản phẩm của các trang trước
       .limit(limitNumber); // Giới hạn số lượng sản phẩm trả về
-
     // Đếm tổng số sản phẩm phù hợp với các điều kiện lọc
     const total = await Product.countDocuments(query);
     // Trả về kết quả
