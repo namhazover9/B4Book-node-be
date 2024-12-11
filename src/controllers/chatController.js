@@ -128,7 +128,7 @@ const getAllChatById = async (req, res) => {
 
         // Tìm tất cả thông tin đối phương trong một lần
         const otherInfos = customer
-            ? await Shop.find({ _id: { $in: otherUserIds } }, "shopName avartar")
+            ? await Shop.find({ _id: { $in: otherUserIds } }, "shopName images")
             : await User.find({ _id: { $in: otherUserIds } }, "userName avartar");
 
         // Map thông tin đối phương với chat
@@ -140,7 +140,7 @@ const getAllChatById = async (req, res) => {
                 ...chat._doc,
                 otherInfo: otherInfo
                     ? customer
-                        ? { type: "shop", name: otherInfo.shopName, avartar: otherInfo.avartar }
+                        ? { type: "shop", name: otherInfo.shopName, avartar: otherInfo.images }
                         : { type: "customer", name: otherInfo.userName, avartar: otherInfo.avartar }
                     : null,
             };
