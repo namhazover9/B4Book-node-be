@@ -316,7 +316,7 @@ const addAddress = async (req, res) => {
 // @access  Private/Customer
 const updateAddress = async (req, res) => {
   try {
-    const { street, city, country, isDefault } = req.body;
+    const { street, city, country, isDefault} = req.body;
     const { id } = req.params; // Lấy addressId từ route parameters
 
     const shop = await Shop.findById(req.user._id);
@@ -339,7 +339,7 @@ const updateAddress = async (req, res) => {
 
     await shop.save();
 
-    res.status(200).json({ message: "Address updated successfully", addresses: user.address });
+    res.status(200).json({ message: "Address updated successfully", addresses: shop.address });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -377,15 +377,17 @@ const deleteAddress = async (req, res) => {
 
 const showShopInfo = async (req, res) => {
   try {
-    const shop = await Shop.findOne({user: req.user._id});
-    if (!shop) {
-      return res.status(404).send({ message: "Shop not found" });
-    }
-    res.status(200).json(shop);
+      const user = req.user._id; // Kiểm tra thông tin user
+      const shop = await Shop.findById(user);
+      if (!shop) {
+          return res.status(404).send({ message: "Shop not found" });
+      }
+      res.status(200).json(shop);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+      res.status(500).json({ message: error.message });
   }
 };
+
 
 // @desc    Update shop information
 // @route   PUT /shop/update
