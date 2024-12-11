@@ -7,6 +7,7 @@ const { isShop } = require('../middlewares/auth');
 router.get("/search", shop.searchShop);
 router.post("/createVoucher",isShop,upload.array("image", 1), shop.createVoucher);
 router.post("/withdraws",isShop, shop.createWithdrawRequest);
+router.get("/shopInfo", isShop, isShop,shop.showShopInfo);
 router.get("/withdraws", isShop, shop.getWithdrawsByShopId);
 router.get("/getAllVoucher", shop.getAllVoucher);
 router.get("/searchVoucher", shop.searchVoucherForShop);

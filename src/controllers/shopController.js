@@ -374,6 +374,19 @@ const deleteAddress = async (req, res) => {
   }
 };
 
+
+const showShopInfo = async (req, res) => {
+  try {
+    const shop = await Shop.findOne({user: req.user._id});
+    if (!shop) {
+      return res.status(404).send({ message: "Shop not found" });
+    }
+    res.status(200).json(shop);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Update shop information
 // @route   PUT /shop/update
 // @access  Private/Shop
@@ -382,9 +395,7 @@ const updateShopInfo = async (req, res) => {
     const {
       shopEmail,
       shopName,
-      address,
       phoneNumber,
-      wallet,
     } = req.body;
 
     const images = req.files?.map((file) => file.path) || []; // Lấy URL nếu có file mới
@@ -397,9 +408,7 @@ const updateShopInfo = async (req, res) => {
     // Cập nhật các trường
     shop.shopEmail = shopEmail || shop.shopEmail;
     shop.shopName = shopName || shop.shopName;
-    shop.address = address || shop.address;
     shop.phoneNumber = phoneNumber || shop.phoneNumber;
-    shop.wallet = wallet || shop.wallet;
     shop.images = images || shop.images;
 
     // Thêm hình ảnh mới nếu có
@@ -546,5 +555,6 @@ module.exports = {
   searchVoucherForShop,
   getTotalShop,
   getAllTotalRevenueForMonth,
-  getMonthlyRevenue
+  getMonthlyRevenue,
+  showShopInfo
 };
