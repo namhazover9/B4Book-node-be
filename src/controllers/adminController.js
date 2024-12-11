@@ -3,6 +3,7 @@ const Role = require("../models/role");
 const Shop = require("../models/shop");
 const User = require("../models/user");
 const WithdrawRequest = require("../models/withdrawRequest");
+const sendShopApprovalMail = require("../middlewares/sendEmailShopApproval");
 
 // function approve register form become a seller from user
 const approvedShop = async (req, res) => {
@@ -33,6 +34,14 @@ const approvedShop = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
+        // Gửi email xác nhận đăng ký thành công
+        try {
+          await sendShopApprovalMail(user.email, response.shopName);
+          console.log("Shop approval email sent to:", user.email);
+        } catch (emailError) {
+            console.error("Error sending shop approval email:", emailError.message);
+        }
+
         res.status(200).json({ shop: response, user });
     } catch (error) {
         res.status(500).send({ message: error.message });
@@ -53,6 +62,7 @@ const approvedProduct = async (req, res) => {
       if (!response) {
           return res.status(404).json({ message: "Product not found" });
       }
+      
       res.status(200).json({ product: response });
   } catch (error) {
       res.status(500).send({ message: error.message });
@@ -218,11 +228,27 @@ const searchAccount = async (req, res) => {
 
 const getAllWithdraws = async (req, res) => {
   try {
+    const status = req.query.status;
+    let statusFilter = {};
+
+    // Kiểm tra giá trị status và xử lý
+    if (status && status !== "All Withdrawals") { // Kiểm tra nếu status không phải "default"
+      switch (status) {
+        case "Pending":
+        case "Paid":
+        case "Rejected":
+          statusFilter.status = status;
+          break;
+        default:
+          return res.status(400).json({ message: "Invalid status value." });
+      }
+    }
     // Lấy tất cả yêu cầu rút tiền và thông tin Shop liên quan
-    const withdrawRequests = await WithdrawRequest.find()
+    const withdrawRequests = await WithdrawRequest.find({ ...statusFilter })
       .populate("shop", "shopName shopEmail") // Lấy các thuộc tính cần thiết từ Shop
       .sort({ createdAt: -1 }); // Sắp xếp từ mới nhất đến cũ nhất
 
+      
     res.status(200).json({ withdrawRequests });
   } catch (error) {
     res.status(500).json({ message: "Internal server error", error });
@@ -250,43 +276,43 @@ const getWithdrawById = async (req, res) => {
 };
 
 
-// const updateWithdrawRequest = async (req, res) => {
-//   const { requestId, status } = req.body;
+const updateWithdrawRequest = async (req, res) => {
+  const { requestId, status } = req.body;
 
-//   try {
-//     // Tìm yêu cầu rút tiền
-//     const withdrawRequest = await WithdrawRequest.findById(requestId).populate("shop");
-//     if (!withdrawRequest) {
-//       return res.status(404).json({ message: "Withdraw request not found" });
-//     }
+  try {
+    // Tìm yêu cầu rút tiền
+    const withdrawRequest = await WithdrawRequest.findById(requestId).populate("shop");
+    if (!withdrawRequest) {
+      return res.status(404).json({ message: "Withdraw request not found" });
+    }
 
-//     // Kiểm tra trạng thái hiện tại
-//     if (withdrawRequest.status !== "Pending") {
-//       return res.status(400).json({ message: "Request has already been processed" });
-//     }
+    // Kiểm tra trạng thái hiện tại
+    if (withdrawRequest.status !== "Pending") {
+      return res.status(400).json({ message: "Request has already been processed" });
+    }
 
-//     // Cập nhật trạng thái
-//     withdrawRequest.status = status;
-//     withdrawRequest.processedAt = new Date();
+    // Cập nhật trạng thái
+    withdrawRequest.status = status;
+    withdrawRequest.processedAt = new Date();
 
-//     // Nếu yêu cầu bị từ chối, hoàn lại tiền vào ví Shop
-//     if (status === "Rejected") {
-//       const shop = withdrawRequest.shop;
-//       if (!shop) {
-//         return res.status(404).json({ message: "Associated shop not found" });
-//       }
+    // Nếu yêu cầu bị từ chối, hoàn lại tiền vào ví Shop
+    if (status === "Rejected") {
+      const shop = withdrawRequest.shop;
+      if (!shop) {
+        return res.status(404).json({ message: "Associated shop not found" });
+      }
 
-//       shop.wallet += withdrawRequest.amount;
-//       await shop.save();
-//     }
+      shop.wallet += withdrawRequest.amount;
+      await shop.save();
+    }
 
-//     await withdrawRequest.save();
+    await withdrawRequest.save();
 
-//     res.status(200).json({ message: "Withdraw request updated successfully", withdrawRequest });
-//   } catch (error) {
-//     res.status(500).json({ message: "Internal server error", error });
-//   }
-// };
+    res.status(200).json({ message: "Withdraw request updated successfully", withdrawRequest });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error", error });
+  }
+};
 
 
 module.exports = { 
@@ -297,6 +323,7 @@ module.exports = {
   searchAccount,
   getAllWithdraws,
   getWithdrawById,
+  updateWithdrawRequest,
   approvedProduct,
   getAllProductRegister
 };
