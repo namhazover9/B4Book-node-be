@@ -548,7 +548,7 @@ const getAllTotalRevenueForMonth = async (req, res) => {
     const currentYearMonth = `${currentYear}-${currentMonth}`;
 
     const shops = await Shop.find({});
-    const totalRevenue = shops.reduce((acc, shop) => {
+    const totalRevenue = shops?.reduce((acc, shop) => {
       const revenue = shop.revenue.find((r) => r.month === currentYearMonth);
       return acc + (revenue ? revenue.amount : 0);
     }, 0);
@@ -558,6 +558,25 @@ const getAllTotalRevenueForMonth = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+const getAllTotalRevenueForMonthByShop = async (req, res) => {
+  try {
+    // Lấy ngày hiện tại và định dạng thành 'YYYY-MM'
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+    const currentYearMonth = `${currentYear}-${currentMonth}`;
+
+    const shop = await Shop.findById(req.params.id);
+  
+      const revenue = shop.revenue.find((r) => r.month === currentYearMonth);
+      totalRevenue = (revenue ? revenue.amount : 0);
+
+    res.status(200).json({ totalRevenue });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
 
 const getMonthlyRevenue = async (req, res) => {
   try {
@@ -582,6 +601,28 @@ const getMonthlyRevenue = async (req, res) => {
   }
 };
 
+const getMonthlyRevenueForShop = async (req, res) => {
+  try {
+    const shop = await Shop.findById(req.params.id);
+    const monthlyRevenue = Array(12).fill(0);
+    const monthlyRevenue5Percent = Array(12).fill(0);
+
+    
+      shop.revenue.forEach(revenue => {
+        const monthIndex = new Date(revenue.month).getMonth();
+        monthlyRevenue[monthIndex] += revenue.amount;
+        monthlyRevenue5Percent[monthIndex] += revenue.amount * 0.05;
+      });
+ 
+
+    const adjustedMonthlyRevenue = monthlyRevenue.map((amount, index) => parseFloat((amount - monthlyRevenue5Percent[index]).toFixed(2)));
+    const roundedMonthlyRevenue5Percent = monthlyRevenue5Percent.map(amount => parseFloat(amount.toFixed(2)));
+
+    res.status(200).json({ monthlyRevenue: adjustedMonthlyRevenue, monthlyRevenue5Percent: roundedMonthlyRevenue5Percent });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
 
 module.exports = {
   createVoucher,
@@ -605,5 +646,7 @@ module.exports = {
   getTotalShop,
   getAllTotalRevenueForMonth,
   getMonthlyRevenue,
-  showShopInfo
+  showShopInfo,
+  getAllTotalRevenueForMonthByShop,
+  getMonthlyRevenueForShop
 };

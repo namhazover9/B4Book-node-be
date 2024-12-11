@@ -19,7 +19,7 @@ router.put("/updateFeedbacks/:id", isAuth, productController.updateFeedbacks);
 router.get("/showAllFeedbacks/:id", productController.showAllFeedbacks);
 router.get("/:id", productController.getProductById);
 router.get("/getProductByShop/:id", productController.getProductByShop);
-
+router.get("/getAmountProduct/:id",isShop, productController.getAmountProductByShop);
 router.delete("/deleteFeedback/:id/:feedbackId", productController.deleteFeedback);
 
 module.exports = router;
