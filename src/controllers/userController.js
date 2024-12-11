@@ -215,7 +215,6 @@ const resetPassword = async (req, res) => {
       { passWord: hash },
       { new: true }
     );
-    console.log(user);
     if (!user) {
       return res.status(404).send({ message: "User not found" });
     }
@@ -546,7 +545,7 @@ const showDetailShop = async (req, res) => {
     // Tìm 5 sản phẩm bán chạy nhất thuộc về shop này
     const products = await Product.find({ shopId: shop._id })
       .sort({ salesNumber: -1 }) // Sắp xếp giảm dần theo salesNumber
-      .limit(10); // Giới hạn 10 sản phẩm
+      .limit(5); // Giới hạn 10 sản phẩm
     // Trả về thông tin shop và danh sách sản phẩm best seller
     res.json({ shop, bestSellers: products });
   } catch (error) {
@@ -563,8 +562,7 @@ const switchShop = async (req, res) => {
       return res.status(404).json({ message: "Shop not found" });
     }
     if(shop.isActive === false || shop.isApproved === false){
-      console.log(shop.isActive === false)
-      return res.status(400).json({ message: "Shop not active" });
+      return res.status(400).json({ message: "You dont have permission" });
     }
     res.status(200).json({ message: "success", data: shop }); // Đảm bảo cấu trúc trả về là chính xác
   } catch (error) {

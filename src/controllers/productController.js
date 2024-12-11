@@ -1,4 +1,5 @@
 const Product = require("../models/product");
+const Shop = require("../models/shop");
 // const Category = require("../models/category");
 const cloudinary = require("../utils/cloudinary");
 const ExcelJS = require('exceljs');
@@ -118,7 +119,6 @@ exports.createProduct = async (req, res) => {
 
     const images = req.files.map((file) => file.path); // Lấy URL từ Cloudinary
     const shopId = req.user._id
-    console.log(shopId)
     const product = new Product({
       title,
       category,
@@ -221,13 +221,14 @@ exports.feebackProduct = async (req, res) => {
     const { rating, comment } = req.body; 
     const productId = req.params.id; 
     const user = req.user._id ;
+    const orderId = req.params.orderId
     const product = await Product.findByIdAndUpdate(productId, { $inc: { numberOfRating: 1} }, { new: true });
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    product.feedBacks.push({ userId: user, rating: rating, comment: comment });
+    product.feedBacks.push({ userId: user, rating: rating, comment: comment, orderId: orderId });
     await product.save();
     res.status(200).json({
       message: "Ratting updated successfully",
@@ -564,6 +565,17 @@ exports.getProductInLandingPage = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+}
+
+exports.getAmountProductByShop = async(req,res)=>{
+  try {
+    const products = await Product.find({shopId: req.params.id, isDeleted: false});
+    res.status(200).json({
+      amountProduct: products.length
+    })
+  } catch (error) {
+    
   }
 }
 

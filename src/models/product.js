@@ -20,6 +20,7 @@ const productSchema = new mongoose.Schema(
     ratingResult: { type: Number,default: 0},
     feedBacks:[{
       userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      orderId: { type: mongoose.Schema.Types.ObjectId, ref: "Order" },
       comment:{type: String},
       createdAt: { type: Date, default: Date.now },
       rating: { type: Number},

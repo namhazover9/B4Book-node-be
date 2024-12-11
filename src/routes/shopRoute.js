@@ -6,6 +6,7 @@ const { isShop } = require('../middlewares/auth');
 
 router.get("/search", shop.searchShop);
 router.post("/createVoucher",isShop,upload.array("image", 1), shop.createVoucher);
+router.get("/shopInfo", isShop,shop.showShopInfo);
 router.post("/withdrawals",isShop, shop.createWithdrawRequest);
 router.get("/withdrawals", isShop, shop.getWithdrawsByShopId);
 router.get("/withdrawals/search",isShop, shop.searchWithdrawal);
@@ -24,5 +25,6 @@ router.get("/totalShop", shop.getTotalShop);
 router.get("/totalRevenue", shop.getAllTotalRevenueForMonth);
 router.get("/monthlyRevenue", shop.getMonthlyRevenue);
 router.get("/:id", shop.getValueVoucher);
-
+router.get("/monthlyRevenue/:id",isShop,shop.getAllTotalRevenueForMonthByShop);
+router.get("/totalRevenueForShop/:id",isShop,shop.getMonthlyRevenueForShop);
 module.exports = router;
