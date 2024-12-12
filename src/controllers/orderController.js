@@ -108,7 +108,7 @@ exports.getCartForOrder = async (req, res) => {
 exports.getCustomerOrders = async (req, res) => {
   try {
     // Tìm tất cả các order của Customer hiện tại
-    const orders = await Order.find({ customer: req.user._id }).sort({ createdAt: -1 }).populate({
+    const orders = await Order.find({ customer: req.user._id }).populate({
       path: 'shops.orderItems.product',
       select: 'title price images',
     });
@@ -641,7 +641,7 @@ exports.placeOrderSTP = async (req, res) => {
     const { shops, shippingAddress, paymentMethod, totalOrderPrice} = req.body;
     const customerId = req.user._id;
 
-    const returnUrl = "https://b4book-api-lxwn.onrender.com";
+    const returnUrl = "http://localhost:8000";
 
     if (!shops || shops.length === 0) {
       return res.status(400).json({
@@ -804,23 +804,58 @@ exports.stripeReturn = async (req, res) => {
     await order.save();
 
     // Update stock and sales of products
-    for(const shop of order.shops){
-      for(const item of shop.orderItems){
-        const product = await Product.findById(item.product._id);
+    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+      const shopUpdates = [];
+      const productUpdates = new Map();
 
-        if(product){
-          product.stock -= item.quantity;
-          product.salesNumber += item.quantity;
-          await product.save();
+      for (const shop of order.shops) {
+        for (const item of shop.orderItems) {
+          // Collect product updates
+          if (!productUpdates.has(item.product._id.toString())) {
+            productUpdates.set(item.product._id.toString(), { stock: 0, salesNumber: 0 });
+          }
+          const productUpdate = productUpdates.get(item.product._id.toString());
+          productUpdate.stock -= item.quantity;
+          productUpdate.salesNumber += item.quantity;
         }
+
+        // Collect shop updates
+        shopUpdates.push({
+          shopId: shop.shopId._id,
+          totalShopPrice: shop.totalShopPrice,
+        });
       }
 
-      const shopDoc = await Shop.findById(shop.shopId._id);
-      if (shopDoc) {
-        shopDoc.wallet = (shopDoc.wallet || 0) + shop.totalShopPrice; // Cộng thêm tổng giá trị shop
-        await shopDoc.save();
-      }
-    }
+      // Update products in bulk
+      const productIds = Array.from(productUpdates.keys());
+      const products = await Product.find({ _id: { $in: productIds } });
+
+      products.forEach((product) => {
+        const update = productUpdates.get(product._id.toString());
+        product.stock += update.stock;
+        product.salesNumber += update.salesNumber;
+      });
+
+      await Promise.all(products.map((product) => product.save()));
+
+      // Update shops in bulk
+      const shopIds = shopUpdates.map((shop) => shop.shopId);
+      const shops = await Shop.find({ _id: { $in: shopIds } });
+
+      shops.forEach((shop) => {
+        const update = shopUpdates.find((upd) => upd.shopId.toString() === shop._id.toString());
+        shop.wallet = (shop.wallet || 0) + update.totalShopPrice;
+
+        // Update or add revenue for the current month
+        const currentRevenue = shop.revenue.find((rev) => rev.month === currentMonth);
+        if (currentRevenue) {
+          currentRevenue.amount += update.totalShopPrice;
+        } else {
+          shop.revenue.push({ month: currentMonth, amount: update.totalShopPrice });
+        }
+      });
+
+      await Promise.all(shops.map((shop) => shop.save()));
 
     const customer = await User.findOne({ _id: order.customer });
 
@@ -829,6 +864,7 @@ exports.stripeReturn = async (req, res) => {
 
     // Gửi email xác nhận đơn hàng
     const email = customer.email; // Giả sử email khách hàng được lưu trong order
+    console.log(email);
     const subject = "Order Confirmation";
     const orderDetails = {
       id: order._id,
@@ -967,7 +1003,7 @@ try {
       let tmnCode = "AL7AF468";
       let secretKey = "8E2BMWQA53PTVWZV7QR1KK1RO01KPK2F";
       let vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
-      let returnUrl = "https://b4book-api-lxwn.onrender.com/order/vnpay-return";
+      let returnUrl = "http://localhost:8000/order/vnpay-return";
       let orderInfo = moment(date).format('DDHHmmss');
       let bankCode = 'VNBANK';
       let orderId = order._id;
