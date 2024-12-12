@@ -108,7 +108,7 @@ exports.getCartForOrder = async (req, res) => {
 exports.getCustomerOrders = async (req, res) => {
   try {
     // Tìm tất cả các order của Customer hiện tại
-    const orders = await Order.find({ customer: req.user._id }).populate({
+    const orders = await Order.find({ customer: req.user._id }).sort({ createdAt: -1 }).populate({
       path: 'shops.orderItems.product',
       select: 'title price images',
     });
@@ -641,7 +641,7 @@ exports.placeOrderSTP = async (req, res) => {
     const { shops, shippingAddress, paymentMethod, totalOrderPrice} = req.body;
     const customerId = req.user._id;
 
-    const returnUrl = "http://localhost:8000";
+    const returnUrl = "https://b4book-api-lxwn.onrender.com";
 
     if (!shops || shops.length === 0) {
       return res.status(400).json({
@@ -829,7 +829,6 @@ exports.stripeReturn = async (req, res) => {
 
     // Gửi email xác nhận đơn hàng
     const email = customer.email; // Giả sử email khách hàng được lưu trong order
-    console.log(email);
     const subject = "Order Confirmation";
     const orderDetails = {
       id: order._id,
@@ -968,7 +967,7 @@ try {
       let tmnCode = "AL7AF468";
       let secretKey = "8E2BMWQA53PTVWZV7QR1KK1RO01KPK2F";
       let vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
-      let returnUrl = "http://localhost:8000/order/vnpay-return";
+      let returnUrl = "https://b4book-api-lxwn.onrender.com/order/vnpay-return";
       let orderInfo = moment(date).format('DDHHmmss');
       let bankCode = 'VNBANK';
       let orderId = order._id;

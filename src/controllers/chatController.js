@@ -107,7 +107,6 @@ const deleteChat = async (req, res) => {
 const getAllChatById = async (req, res) => {
     try {
         const { id } = req.params; // Lấy ID từ params
-
         // Kiểm tra user hoặc shop
         const customer = await User.findById(id);
         const shop = customer ? null : await Shop.findById(id);
@@ -117,7 +116,7 @@ const getAllChatById = async (req, res) => {
         }
 
         // Lấy danh sách chat liên quan
-        const chats = await Chat.find({ users: id });
+        const chats = await Chat.find({ users: id }).sort({ updatedAt: -1 });
 
         if (!chats || chats.length === 0) {
             return res.status(404).json({ message: "Chats not found" });
@@ -145,7 +144,6 @@ const getAllChatById = async (req, res) => {
                     : null,
             };
         });
-
         // Trả về kết quả
         res.status(200).json({
             status: "success",
